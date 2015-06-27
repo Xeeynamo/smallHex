@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="draw.h" />
+    <ClInclude Include="font8.h" />
+    <ClInclude Include="graphics.h" />
+    <ClInclude Include="defines.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="smallhex.h" />
+    <ClInclude Include="system.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="draw.c" />
+    <ClCompile Include="font8.c" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="graphics.c" />
+    <ClCompile Include="Input.c" />
+    <ClCompile Include="smallhex.c" />
+    <ClCompile Include="system.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
+</Project>
