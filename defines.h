@@ -9,14 +9,12 @@
 #define ALIGN(i)
 
 #elif defined(PLATFORM_PSP2)
+#include <psp2/moduleinfo.h>
+#include <psp2/kernel/memorymgr.h>
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
-#include <psp2/types.h>
-#include <psp2/moduleinfo.h>
-#include <psp2/types.h>
-#include <psp2/kernel/memorymgr.h>
 #include <sys/time.h>
 
 #define ALIGN(i) __attribute((aligned(i)))
