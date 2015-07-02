@@ -18,13 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Input.h"
 #include "defines.h"
+#include <math.h>
 
 #if defined(_WIN32)
 #elif defined(PLATFORM_PSP2)
 #include <psp2/ctrl.h>
 #endif
 
-//static int InputDeadZone = 12288;
+int InputDeadZone = 12288;
 #define APPLY_DEADZONE(i) if (abs(i) < InputDeadZone) i = 0
 
 void InputInit()
@@ -33,7 +34,7 @@ void InputInit()
 #elif defined(PLATFORM_PSP2)
 	sceCtrlSetSamplingMode(PSP2_CTRL_MODE_ANALOG);
 #endif
-	//InputDeadZone = 12288;
+	InputDeadZone = 12288;
 }
 void InputDestroy()
 {
@@ -43,7 +44,7 @@ void InputDestroy()
 }
 void InputSetDeadZone(short value)
 {
-
+	InputDeadZone = (int)abs(value);
 }
 void InputUpdate(InputData *data)
 {
@@ -59,8 +60,8 @@ void InputUpdate(InputData *data)
 	data->ry = (ctrlData.ry - 0x80) << 8;
 #endif
 
-	//APPLY_DEADZONE(data->lx);
-	//APPLY_DEADZONE(data->ly);
-	//APPLY_DEADZONE(data->rx);
-	//APPLY_DEADZONE(data->ry);
+	APPLY_DEADZONE(data->lx);
+	APPLY_DEADZONE(data->ly);
+	APPLY_DEADZONE(data->rx);
+	APPLY_DEADZONE(data->ry);
 }
