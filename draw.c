@@ -42,6 +42,7 @@ typedef struct
 	unsigned int *data;
 } _FontStructure;
 
+Font DefaultFont = NULL;
 unsigned int font8_un32[NCHARS_ROW * NCHARS_COL * CHAR_SIZE2x2];
 
 void _UnpackFont8_1bpp(unsigned int *fontDst, const unsigned char *fontSrc, unsigned int foreColor, unsigned int backColor)
@@ -113,8 +114,11 @@ bool FontCreate(Font *font, FontType type, Color32 foreColor, Color32 backColor)
 }
 void FontDestroy(Font font)
 {
-	MemoryFree(((_FontStructure*)font)->data);
-	MemoryFree(font);
+	if (font != DefaultFont)
+	{
+		MemoryFree(((_FontStructure*)font)->data);
+		MemoryFree(font);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -154,22 +158,27 @@ void DrawCharColored8(Surface *surface, unsigned int x, unsigned int y, unsigned
 }
 void DrawChar(Surface *surface, Font font, unsigned int x, unsigned int y, unsigned int ch)
 {
-	_FontStructure *pFont = (_FontStructure*)font;
-	ch -= pFont->startch;
-	if (ch >= 0 || ch < pFont->count)
+	if (font != DefaultFont)
 	{
-		unsigned int i, j;
-		unsigned int *pSrc = pFont->data + pFont->size * ch;
-		unsigned int *pDst = (unsigned int*)surface->data + x + y * surface->width;
-
-		unsigned int w = pFont->width; // put width on stack to improve access speed
-		for (j = 0; j < pFont->height; j++)
+		_FontStructure *pFont = (_FontStructure*)font;
+		ch -= pFont->startch;
+		if (ch >= 0 || ch < pFont->count)
 		{
-			for (i = 0; i < w; i++)
-				pDst[i] = *pSrc++;
-			pDst += surface->width;
+			unsigned int i, j;
+			unsigned int *pSrc = pFont->data + pFont->size * ch;
+			unsigned int *pDst = (unsigned int*)surface->data + x + y * surface->width;
+
+			unsigned int w = pFont->width; // put width on stack to improve access speed
+			for (j = 0; j < pFont->height; j++)
+			{
+				for (i = 0; i < w; i++)
+					pDst[i] = *pSrc++;
+				pDst += surface->width;
+			}
 		}
 	}
+	else
+		DrawChar8(surface, x, y, ch);
 }
 void DrawString8(Surface *surface, unsigned int x, unsigned int y, char *str)
 {
@@ -226,27 +235,32 @@ void DrawStringColored8(Surface *surface, unsigned int x, unsigned int y, unsign
 }
 void DrawString(Surface *surface, Font font, unsigned int x, unsigned int y, char *str)
 {
-	int ch;
-	int cx = x;
-	while ((ch = *str++) != '\0')
+	if (font != DefaultFont)
 	{
-		// avoiding useless switch statement if we are sure that it's a char
-		if (ch < 0x20)
+		int ch;
+		int cx = x;
+		while ((ch = *str++) != '\0')
 		{
-			switch (ch)
+			// avoiding useless switch statement if we are sure that it's a char
+			if (ch < 0x20)
 			{
-			case '\n':
-				cx = x;
-				y += CHAR_SIZE;
-				continue;
-			default:
-				ch = '.'; // default character if it's not recognized correctly
-				break;
+				switch (ch)
+				{
+				case '\n':
+					cx = x;
+					y += CHAR_SIZE;
+					continue;
+				default:
+					ch = '.'; // default character if it's not recognized correctly
+					break;
+				}
 			}
+			DrawChar(surface, font, cx, y, ch);
+			cx += CHAR_SIZE;
 		}
-		DrawChar(surface, font, cx, y, ch);
-		cx += CHAR_SIZE;
 	}
+	else
+		DrawString8(surface, x, y, str);
 }
 void ClearSurface(Surface *surface, Color32 color)
 {
