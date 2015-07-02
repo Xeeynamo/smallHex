@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FILE_OPEN_TRUNCATE 0x0400
 
 typedef void *File;
+typedef void *Directory;
 
 typedef enum
 {
@@ -34,6 +35,25 @@ typedef enum
 	Seek_Current,
 	Seek_End,
 } SeekMode;
+
+typedef enum
+{
+	Directory_Continue = 1,
+	Directory_EndOfEntries = 0,
+	Directory_Error = -1
+} DirectoryResult;
+
+typedef struct  
+{
+	//! \brief name of entry
+	char name[0x100];
+	//! \brief length of the item in byte, if it's a file, else -1
+	int length;
+
+} DirectoryEntry;
+
+extern File FileInvalid;
+extern Directory DirectoryInvalid;
 
 void *MemoryAlloc(unsigned int size);
 void *MemoryFree(void *mem);
@@ -43,5 +63,9 @@ void FileClose(File file);
 unsigned int FileRead(File file, void *data, unsigned int size);
 unsigned int FileWrite(File file, void *data, unsigned int size);
 void FileSeek(File file, signed long long offset, unsigned int mode);
+
+Directory DirectoryOpen(const char *strDirectoryname);
+DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry);
+void DirectoryClose(Directory directory);
 
 #endif
