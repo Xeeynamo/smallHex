@@ -9,8 +9,8 @@
 #include <psp2/io/dirent.h>
 #endif
 
-File FileInvalid = (File)-1;
-Directory DirectoryInvalid = (Directory)-1;
+const File FileInvalid = (File)-1;
+const Directory DirectoryInvalid = (Directory)-1;
 
 void *MemoryAlloc(unsigned int size)
 {
@@ -63,6 +63,8 @@ File FileOpen(const char *strFilename, unsigned int flags)
 		creation |= CREATE_ALWAYS;
 	else if (flags & FILE_OPEN_TRUNCATE)
 		creation |= TRUNCATE_EXISTING;
+	else
+		creation |= OPEN_EXISTING;
 	HANDLE hFile = CreateFile(strFilename, access, FILE_SHARE_READ | FILE_SHARE_DELETE,
 		NULL, creation, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -146,6 +148,16 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 		return Directory_Error;
 #if defined(_WIN32)
 #elif defined(PLATFORM_PSP2)
+	SceIoDirent dir;
+	int res = sceIoDread((SceUID)directory, &dir);
+	if (res < 0)
+		return Directory_Error;
+	memcpy(entry->name, dir.d_name);
+	if ((dir.d_stat.st_mode & 0x0010) != 0)
+		entry->length = -1;
+	else
+		entry->length = dir.d_stat.st_size;
+	return res == 0 ? Directory_EndOfEntries : Directory_Continue;
 #endif
 	return Directory_Error;
 }
@@ -155,5 +167,6 @@ void DirectoryClose(Directory directory)
 		return;
 #if defined(_WIN32)
 #elif defined(PLATFORM_PSP2)
+	sceIoDclose((SceUID)directory);
 #endif
 }

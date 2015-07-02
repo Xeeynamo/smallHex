@@ -24,5 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 void shInit();
 void shDestroy();
 void shDrawTitleBar(Surface *surface);
+bool shOpenFileDialog(Surface *surface, Font font);
+bool shOpenFile(const char *strFilename);
+void shFlushFile();
+void shCloseFile();
+void shDrawBody(Surface *surface);
 
 #endif

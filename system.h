@@ -48,12 +48,12 @@ typedef struct
 	//! \brief name of entry
 	char name[0x100];
 	//! \brief length of the item in byte, if it's a file, else -1
-	int length;
+	long long length;
 
 } DirectoryEntry;
 
-extern File FileInvalid;
-extern Directory DirectoryInvalid;
+extern const File FileInvalid;
+extern const Directory DirectoryInvalid;
 
 void *MemoryAlloc(unsigned int size);
 void *MemoryFree(void *mem);
