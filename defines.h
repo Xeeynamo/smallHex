@@ -18,6 +18,9 @@
 #include <sys/time.h>
 
 #define ALIGN(i) __attribute((aligned(i)))
+#ifndef abs
+#define abs(x) ((x) < 0 ? (-(x)) : (x))
+#endif
 
 #endif
 
