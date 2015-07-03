@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 
 #if defined(_WIN32)
+#include <Windows.h>
 #elif defined(PLATFORM_PSP2)
 #include <psp2/ctrl.h>
 #endif
@@ -48,8 +49,23 @@ void InputSetDeadZone(short value)
 }
 void InputUpdate(InputData *data)
 {
+	data->data = 0;
+	data->lx = data->ly = data->rx = data->ry = 0;
 #if defined(_WIN32)
-
+	data->inPc.info = GetAsyncKeyState(VK_MENU) != 0;
+	data->inPc.dummy1 = 0;
+	data->inPc.dummy2 = 0;
+	data->inPc.menu = GetAsyncKeyState(VK_RETURN) != 0;
+	data->inPc.up = GetAsyncKeyState(VK_UP) != 0;
+	data->inPc.right = GetAsyncKeyState(VK_RIGHT) != 0;
+	data->inPc.down = GetAsyncKeyState(VK_DOWN) != 0;
+	data->inPc.left = GetAsyncKeyState(VK_LEFT) != 0;
+	data->inPc.pgup = GetAsyncKeyState(VK_PRIOR) != 0;
+	data->inPc.pgdown = GetAsyncKeyState(VK_NEXT) != 0;
+	data->inPc.operation = GetAsyncKeyState(VK_ESCAPE) != 0;
+	data->inPc.back = GetAsyncKeyState(VK_BACK) != 0;
+	data->inPc.select = GetAsyncKeyState(VK_SPACE) != 0;
+	data->inPc.options = GetAsyncKeyState(VK_SHIFT) != 0;
 #elif defined(PLATFORM_PSP2)
 	SceCtrlData ctrlData;
 	sceCtrlPeekBufferPositive(0, &ctrlData, 1);
