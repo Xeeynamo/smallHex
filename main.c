@@ -36,9 +36,7 @@ int main()
 	else
 	{
 		Surface surface;
-		InputData input;
 		GraphicsSetTitle(APP_TITLE);
-		InputInit();
 		shInit();
 #if defined(_DEBUG) && defined(_WIN32)
 		shOpenFile("D:\\SONIC1.BIN");
@@ -49,7 +47,7 @@ int main()
 		{
 			GetCurrentBuffer(&surface);
 			ClearSurface(&surface, 0);
-			InputUpdate(&input);
+			shInputControl();
 			shDrawTitleBar(&surface);
 			shDrawBody(&surface);
 			GraphicsSwapBuffers(true);

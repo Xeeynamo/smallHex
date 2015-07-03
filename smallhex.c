@@ -19,11 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include "smallhex.h"
 #include "system.h"
+#include "input.h"
 #include "filedilaog.h"
 
 #define BUFFER_LENGTH (4 * 1024)
 
 #define TITLEBAR_BG_COLOR RGB8(0xC0, 0xC0, 0xC0)
+#define HEXCURSOR_FORE RGB8(0xFF, 0x00, 0x00)
+#define HEXCURSOR_BACK RGB8(0x10, 0x30, 0x30)
 #define FONT_W 8
 #define FONT_H 8
 
@@ -33,10 +36,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Resources
 Font fontBar;
+Font fontHexSelected;
 
 // File management
 File shFile;
 bool shFileReadonly;
+long long shFileLength;
 char shFilename[1024];
 char shFilenameTitle[MAX_PATH];
 
@@ -53,6 +58,9 @@ bool setOffsetLenght = 7;
 bool setBytesPerLine = 16;
 bool setBytesGroup = 1;
 
+// Hex editor itself
+int shCursorPos;
+
 static const char Hex2Char[] =
 {
 	'0', '1', '2', '3', '4', '5', '6', '7',
@@ -67,9 +75,17 @@ void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, uns
 	{
 		unsigned int n = (value >> sh) & 0xF;
 		sh += 4;
-		DrawChar8(surface, x, y, Hex2Char[n]);
+		DrawChar(surface, font, x, y, Hex2Char[n]);
 		x -= 8;
 	}
+}
+void _shDrawCursor(Surface *surface, int pos, int xcount, int ycount)
+{
+	int x = ((pos % xcount) * 3 + 1) * FONT_W;
+	int y = (pos / ycount) * (FONT_H + BYTES_VERTICALSPACE) + (setShowBar ? 2 : 1) * FONT_H;
+
+	_shDrawHex(surface, fontHexSelected, x, y, shBuffer[pos], 2);
+	FillRectangle(surface, x + FONT_W, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
 }
 unsigned int _shHexToChar(unsigned int value)
 {
@@ -95,16 +111,34 @@ void _shResetBuffer()
 	FileSeek(shFile, shFilePosition, Seek_Begin);
 	FileRead(shFile, shBuffer, BUFFER_LENGTH);
 }
-
+void _shRecalculateBuffer(int position, int length)
+{
+	int startPos = position - shBufferIndex;
+	if (startPos < 0)
+	{
+		int newPos = shBufferIndex - startPos + length - BUFFER_LENGTH;
+		FileSeek(shFile, newPos, Seek_Begin);
+		FileRead(shFile, shBuffer, BUFFER_LENGTH);
+	}
+	else if (startPos + length > BUFFER_LENGTH)
+	{
+		shBufferIndex = startPos;
+		FileSeek(shFile, startPos, Seek_Begin);
+		FileRead(shFile, shBuffer, BUFFER_LENGTH);
+	}
+}
 
 void shInit()
 {
 	shFile = FileInvalid;
 	FontCreate(&fontBar, Font_Msx, RGB8(0x00, 0x00, 0x00), TITLEBAR_BG_COLOR);
+	FontCreate(&fontHexSelected, Font_Msx, HEXCURSOR_FORE, HEXCURSOR_BACK);
+	InputInit();
 }
 void shDestroy()
 {
 	FontDestroy(fontBar);
+	InputDestroy();
 }
 void shDrawTitleBar(Surface *surface)
 {
@@ -128,6 +162,7 @@ void shDrawBody(Surface *surface)
 	int xcount = (surface->width / FONT_W) - (setOffsetShow ? setOffsetLenght + 1 : 0) - 3;
 	xcount /= (3 + 1);
 
+	_shRecalculateBuffer(shFilePosition, xcount * ycount);
 	for (j = 0; j < ycount; j++)
 	{
 		int curX = x;
@@ -157,6 +192,7 @@ void shDrawBody(Surface *surface)
 			DrawChar8(surface, curX++ * 8, curY, _shHexToChar(*bufChar++));
 		}
 	}
+	_shDrawCursor(surface, shCursorPos, xcount, ycount);
 }
 
 
@@ -201,6 +237,9 @@ bool shOpenFile(const char *strFilename)
 	memcpy(shFilename, strFilename, len);
 	shFilenameTitle[0] = '\0';
 	shFilePosition = 0;
+	shCursorPos = 0;
+	shFileLength = FileSeek(shFile, 0, Seek_End);
+	FileSeek(shFile, 0, Seek_Begin),
 	_shResetBuffer();
 	return true;
 }
@@ -212,4 +251,20 @@ void shCloseFile()
 {
 	FileClose(shFile);
 	shFile = FileInvalid;
+}
+void shInputControl()
+{
+	InputData data;
+	InputUpdate(&data);
+
+	if (data.inPs.left)
+	{
+		if (shCursorPos > 0)
+			shCursorPos--;
+	}
+	if (data.inPs.right)
+	{
+		if (shCursorPos < shFileLength)
+			shCursorPos++;
+	}
 }
