@@ -1,3 +1,21 @@
+/*
+smallHex - hexadecimal editor for Windows and PS Vita
+Copyright (C) 2015  Luciano Ciccariello (Xeeynamo)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdlib.h>
 #include "system.h"
 
@@ -117,17 +135,20 @@ unsigned int FileWrite(File file, void *data, unsigned int size)
 #endif
 	return 0;
 }
-void FileSeek(File file, signed long long offset, unsigned int mode)
+signed long long FileSeek(File file, signed long long offset, unsigned int mode)
 {
 	if (file == FileInvalid)
-		return;
+		return -1;
 #if defined(_WIN32)
 	LARGE_INTEGER large;
+	LARGE_INTEGER large2;
 	large.QuadPart = offset;
-	SetFilePointerEx((HANDLE)file, large, NULL, mode);
+	SetFilePointerEx((HANDLE)file, large, &large2, mode);
+	return (signed long long)large2.QuadPart;
 #elif defined(PLATFORM_PSP2)
-	sceIoLseek((SceUID)file, offset, mode);
+	return (signed long long)sceIoLseek((SceUID)file, offset, mode);
 #endif
+	return -1;
 }
 
 Directory DirectoryOpen(const char *strDirectoryname)

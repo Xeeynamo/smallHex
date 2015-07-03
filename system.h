@@ -62,7 +62,8 @@ File FileOpen(const char *strFilename, unsigned int flags);
 void FileClose(File file);
 unsigned int FileRead(File file, void *data, unsigned int size);
 unsigned int FileWrite(File file, void *data, unsigned int size);
-void FileSeek(File file, signed long long offset, unsigned int mode);
+signed long long FileSeek(File file, signed long long offset, unsigned int mode);
+
 
 Directory DirectoryOpen(const char *strDirectoryname);
 DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry);
