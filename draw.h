@@ -58,7 +58,7 @@ void DrawDestroy();
 //! \param[in] width size in pixel of how horizontally big is the rectangle to draw
 //! \param[in] width size in pixel of how vertically big is the rectangle to draw
 //! \param[in] color of rectangle to draw
-void FillRectangle(Surface *surface, unsigned int x, unsigned int y, unsigned int width, unsigned int height, Color32 color);
+void FillRectangle(Surface *surface, int x, int y, int width, int height, Color32 color);
 
 //! \brief create a font
 //! \param[out] font created
@@ -76,42 +76,42 @@ void FontDestroy(Font font);
 //! \param[in] x coordinate in pixel where the character will be drawn
 //! \param[in] y coordinate in pixel where the character will be drawn
 //! \param[in] ch character to write in 8-bit ASCII format
-void DrawChar8(Surface *surface, unsigned int x, unsigned int y, unsigned int ch);
+void DrawChar8(Surface *surface, int x, int y, unsigned int ch);
 
 //! \brief fast way to draw a character; can select a foreground color
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the character will be drawn
 //! \param[in] y coordinate in pixel where the character will be drawn
 //! \param[in] ch character to write in 8-bit ASCII format
-void DrawCharColored8(Surface *surface, unsigned int x, unsigned int y, unsigned int color, unsigned int ch);
+void DrawCharColored8(Surface *surface, int x, int y, unsigned int color, unsigned int ch);
 
 //! \brief fast way to draw a character; must specify a font data
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the character will be drawn
 //! \param[in] y coordinate in pixel where the character will be drawn
 //! \param[in] ch character to write in 8-bit ASCII format
-void DrawChar(Surface *surface, Font font, unsigned int x, unsigned int y, unsigned int ch);
+void DrawChar(Surface *surface, Font font, int x, int y, unsigned int ch);
 
 //! \brief faster way to draw a string; background black, foreground white
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawString8(Surface *surface, unsigned int x, unsigned int y, char *str);
+void DrawString8(Surface *surface, int x, int y, char *str);
 
 //! \brief fast way to draw a character; can select a foreground color
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawStringColored8(Surface *surface, unsigned int x, unsigned int y, unsigned int color, char *str);
+void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, char *str);
 
 //! \brief fast way to draw a character; must specify a font data
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawString(Surface *surface, Font font, unsigned int x, unsigned int y, char *str);
+void DrawString(Surface *surface, Font font, int x, int y, char *str);
 
 //! \brief clear an entire surface
 //! \param[in] surface to clear

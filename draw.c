@@ -71,9 +71,18 @@ void DrawDestroy()
 
 //////////////////////////////////////////////////////////////////////////
 // SHAPES DRAWING STUFF
-void FillRectangle(Surface *surface, unsigned int x, unsigned int y, unsigned int width, unsigned int height, Color32 color)
+void FillRectangle(Surface *surface, int x, int y, int width, int height, Color32 color)
 {
 	unsigned int *pDstMain = (unsigned int*)surface->data + x + y * surface->width;
+
+	if (x < 0 || y < 0)
+		return;
+	if (x + width > surface->width)
+		width = surface->width - x;
+	if (y + height > surface->height)
+		height = surface->height - y;
+	if (width < 0 || height < 0)
+		return;
 
 	while (height--)
 	{
@@ -124,8 +133,11 @@ void FontDestroy(Font font)
 //////////////////////////////////////////////////////////////////////////
 // CHARACTER DRAWING STUFF
 
-void DrawChar8(Surface *surface, unsigned int x, unsigned int y, unsigned int ch)
+void DrawChar8(Surface *surface, int x, int y, unsigned int ch)
 {
+	if (x < 0 || x > surface->width - CHAR_SIZE ||
+		y < 0 || y > surface->height - CHAR_SIZE)
+		return;
 	if (ch < NCHARS_ROW * NCHARS_COL)
 	{
 		int i, j;
@@ -140,8 +152,11 @@ void DrawChar8(Surface *surface, unsigned int x, unsigned int y, unsigned int ch
 		}
 	}
 }
-void DrawCharColored8(Surface *surface, unsigned int x, unsigned int y, unsigned int color, unsigned int ch)
+void DrawCharColored8(Surface *surface, int x, int y, unsigned int color, unsigned int ch)
 {
+	if (x < 0 || x > surface->width - CHAR_SIZE ||
+		y < 0 || y > surface->height - CHAR_SIZE)
+		return;
 	if (ch < NCHARS_ROW * NCHARS_COL)
 	{
 		int i, j;
@@ -156,11 +171,15 @@ void DrawCharColored8(Surface *surface, unsigned int x, unsigned int y, unsigned
 		}
 	}
 }
-void DrawChar(Surface *surface, Font font, unsigned int x, unsigned int y, unsigned int ch)
+void DrawChar(Surface *surface, Font font, int x, int y, unsigned int ch)
 {
 	if (font != DefaultFont)
 	{
 		_FontStructure *pFont = (_FontStructure*)font;
+		if (x < 0 || x > surface->width - (int)pFont->width ||
+			y < 0 || y > surface->height - (int)pFont->height)
+			return;
+
 		ch -= pFont->startch;
 		if (ch >= 0 || ch < pFont->count)
 		{
@@ -180,7 +199,7 @@ void DrawChar(Surface *surface, Font font, unsigned int x, unsigned int y, unsig
 	else
 		DrawChar8(surface, x, y, ch);
 }
-void DrawString8(Surface *surface, unsigned int x, unsigned int y, char *str)
+void DrawString8(Surface *surface, int x, int y, char *str)
 {
 	int ch;
 	int cx = x;
@@ -204,7 +223,7 @@ void DrawString8(Surface *surface, unsigned int x, unsigned int y, char *str)
 		cx += CHAR_SIZE;
 	}
 }
-void DrawStringColored8(Surface *surface, unsigned int x, unsigned int y, unsigned int color, char *str)
+void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, char *str)
 {
 	if (color != 0xFFFFFFFF)
 	{
@@ -233,7 +252,7 @@ void DrawStringColored8(Surface *surface, unsigned int x, unsigned int y, unsign
 	else
 		DrawString8(surface, x, y, str);
 }
-void DrawString(Surface *surface, Font font, unsigned int x, unsigned int y, char *str)
+void DrawString(Surface *surface, Font font, int x, int y, char *str)
 {
 	if (font != DefaultFont)
 	{
