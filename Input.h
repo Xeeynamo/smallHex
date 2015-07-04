@@ -53,7 +53,7 @@ typedef struct
 	unsigned int cross : 1;
 	unsigned int square : 1;
 } InputDataPlaystation;
-typedef struct 
+typedef struct
 {
 	union
 	{
@@ -61,6 +61,15 @@ typedef struct
 		InputDataPlaystation inPs;
 		unsigned int data;
 	};
+} InputButton;
+typedef struct 
+{
+	//! \brief raw button values
+	InputButton raw;
+	//! \brief holds previous button state
+	InputButton prev;
+	//! \brief holds raw values with repeat processor
+	InputButton repeat;
 	// values that goes between -32768 and +32767
 	short lx, ly; // mapped on numeric pad on windows
 	short rx, ry; // mapped on mouse wheel on windows
@@ -68,10 +77,26 @@ typedef struct
 
 void InputInit();
 void InputDestroy();
+
+//! \brief get dead zone for analog or wheel movement
+//! \param[out] value between 0 and 32767
+//! \sa InputSetDeadZone
+void InputGetDeadZone(unsigned int *value);
 //! \brief set dead zone for analog or wheel movement
 //! \param[in] value between 0 and 32767
 //! \details inital value set by InputInit is 12288
-void InputSetDeadZone(short value);
+void InputSetDeadZone(unsigned int value);
+
+//! \brief get the repeat frequency
+//! \param[out] wait how frames to wait until "repeating"
+//! \param[out] repeat frequency
+//! \sa InputSetRepeat
+void InputGetRepeat(int *wait, int *repeat);
+//! \brief set the repeat frequency
+//! \param[in] wait how frames to wait until "repeating"; default 30
+//! \param[in] repeat frequency; default 0
+void InputSetRepeat(int wait, int repeat);
+
 void InputUpdate(InputData *data);
 
 #endif
