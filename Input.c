@@ -39,7 +39,7 @@ unsigned int _InputProcessRepeat(unsigned int value)
 	unsigned int i = 0;
 	unsigned int data = 0;
 	int *pRepeatValues = InputRepeatValues;
-	for (unsigned int i = 0; i < sizeof(InputRepeatValues) / sizeof(*InputRepeatValues); i++)
+	for (i = 0; i < sizeof(InputRepeatValues) / sizeof(*InputRepeatValues); i++)
 	{
 		unsigned int mask = (1 << i);
 		if (value & mask)

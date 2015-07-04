@@ -47,8 +47,8 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	DWORD err = CommDlgExtendedError();
 	if (err == 0)
 		return FileDialogResult_Cancel;
-	return FileDialogResult_Error;
 #elif defined(PLATFORM_PSP2)
 
 #endif
+	return FileDialogResult_Error;
 }

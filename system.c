@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdlib.h>
+#include <string.h>
 #include "system.h"
 
 #if defined(_WIN32)
@@ -173,7 +174,7 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 	int res = sceIoDread((SceUID)directory, &dir);
 	if (res < 0)
 		return Directory_Error;
-	memcpy(entry->name, dir.d_name);
+	strcpy(entry->name, dir.d_name);
 	if ((dir.d_stat.st_mode & 0x0010) != 0)
 		entry->length = -1;
 	else

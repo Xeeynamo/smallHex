@@ -41,7 +41,7 @@ int main()
 #if defined(_DEBUG) && defined(_WIN32)
 		shOpenFile("D:\\SONIC1.BIN");
 #else
-		shOpenFileDialog(surface, DefaultFont);
+		shOpenFileDialog(&surface, DefaultFont);
 #endif
 		while (1)
 		{
