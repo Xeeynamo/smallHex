@@ -70,6 +70,8 @@ static const char Hex2Char[] =
 	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
 };
 
+#define _shHexToChar(value) (value)
+
 void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, unsigned int value, unsigned int units)
 {
 	unsigned int sh = 0;
@@ -89,10 +91,6 @@ void _shDrawCursor(Surface *surface, int pos, int xcount, int ycount)
 
 	_shDrawHex(surface, fontHexSelected, x, y, shBuffer[pos], 2);
 	FillRectangle(surface, x + FONT_W, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
-}
-unsigned int _shHexToChar(unsigned int value)
-{
-	return value;
 }
 void _shAssignTitle(int maxlength, const char *title)
 {
