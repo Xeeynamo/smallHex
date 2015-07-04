@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "input.h"
 #include "filedilaog.h"
 
-#define BUFFER_LENGTH (4 * 1024)
+#define BUFFER_LENGTH 32768
 
 #define TITLEBAR_BG_COLOR RGB8(0xC0, 0xC0, 0xC0)
 #define HEXCURSOR_FORE RGB8(0xFF, 0x00, 0x00)
@@ -119,15 +119,17 @@ unsigned char *_shRecalculateBuffer(int position, int length)
 	int startPos = position - shBufferIndex;
 	if (startPos < 0)
 	{
-		int newPos = shBufferIndex - startPos + length - BUFFER_LENGTH;
-		FileSeek(shFile, newPos, Seek_Begin);
+		shBufferIndex = shBufferIndex + startPos + length - BUFFER_LENGTH;
+		if (shBufferIndex < 0)
+			shBufferIndex = 0;
+		FileSeek(shFile, shBufferIndex, Seek_Begin);
 		FileRead(shFile, shBuffer, BUFFER_LENGTH);
 		return shBuffer;
 	}
 	else if (startPos + length > BUFFER_LENGTH)
 	{
-		shBufferIndex = startPos;
-		FileSeek(shFile, startPos, Seek_Begin);
+		shBufferIndex = position;
+		FileSeek(shFile, shBufferIndex, Seek_Begin);
 		FileRead(shFile, shBuffer, BUFFER_LENGTH);
 		return shBuffer;
 	}

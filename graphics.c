@@ -200,7 +200,7 @@ void GraphicsSwapBuffers(bool waitvsync)
 #if defined(_WIN32)
 	BitBlt(curDc, 0, 0, curSurface.width, curSurface.height, backDc, 0, 0, SRCCOPY);
 	if (waitvsync)
-		Sleep(1);
+		Sleep(15);
 
 #elif defined(PLATFORM_PSP2)
 	sceDisplaySetFrameBuf(&fb[cur_fb], PSP2_DISPLAY_SETBUF_NEXTFRAME);
