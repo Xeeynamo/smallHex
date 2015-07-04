@@ -53,13 +53,16 @@ int shFilePosition;
 
 // Settings variables
 bool setShowBar = true;
-bool setOffsetShow = false;
+bool setOffsetShow = true;
 bool setOffsetLenght = 7;
 bool setBytesPerLine = 16;
 bool setBytesGroup = 1;
 
 // Hex editor itself
+int shBytesPerLine;
+int shLinesPerPage;
 int shCursorPos;
+int shPagePos;
 
 static const char Hex2Char[] =
 {
@@ -81,8 +84,8 @@ void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, uns
 }
 void _shDrawCursor(Surface *surface, int pos, int xcount, int ycount)
 {
-	int x = ((pos % xcount) * 3 + 1) * FONT_W;
-	int y = (pos / ycount) * (FONT_H + BYTES_VERTICALSPACE) + (setShowBar ? 2 : 1) * FONT_H;
+	int x = ((pos % xcount) * 3 + 1 + (setOffsetShow ? setOffsetLenght + 1 : 0)) * FONT_W;
+	int y = (pos / xcount - shPagePos / xcount) * (FONT_H + BYTES_VERTICALSPACE) + (setShowBar ? 2 : 1) * FONT_H;
 
 	_shDrawHex(surface, fontHexSelected, x, y, shBuffer[pos], 2);
 	FillRectangle(surface, x + FONT_W, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
@@ -111,7 +114,7 @@ void _shResetBuffer()
 	FileSeek(shFile, shFilePosition, Seek_Begin);
 	FileRead(shFile, shBuffer, BUFFER_LENGTH);
 }
-void _shRecalculateBuffer(int position, int length)
+unsigned char *_shRecalculateBuffer(int position, int length)
 {
 	int startPos = position - shBufferIndex;
 	if (startPos < 0)
@@ -119,13 +122,25 @@ void _shRecalculateBuffer(int position, int length)
 		int newPos = shBufferIndex - startPos + length - BUFFER_LENGTH;
 		FileSeek(shFile, newPos, Seek_Begin);
 		FileRead(shFile, shBuffer, BUFFER_LENGTH);
+		return shBuffer;
 	}
 	else if (startPos + length > BUFFER_LENGTH)
 	{
 		shBufferIndex = startPos;
 		FileSeek(shFile, startPos, Seek_Begin);
 		FileRead(shFile, shBuffer, BUFFER_LENGTH);
+		return shBuffer;
 	}
+	else
+		return shBuffer + startPos;
+}
+void _shResizeWindow(Surface *surface)
+{
+	int y = (setShowBar ? 2 : 1) * FONT_H;
+
+	shLinesPerPage = (surface->height - y - FONT_H - 1) / (FONT_H + BYTES_VERTICALSPACE);
+	shBytesPerLine = (surface->width / FONT_W) - (setOffsetShow ? setOffsetLenght + 1 : 0) - 3;
+	shBytesPerLine /= (3 + 1);
 }
 
 void shInit()
@@ -153,16 +168,16 @@ void shDrawTitleBar(Surface *surface)
 }
 void shDrawBody(Surface *surface)
 {
-	unsigned char *bufHex = shBuffer;
-	unsigned char *bufChar = shBuffer;
 	int i, j;
 	int x = 1;
 	int y = (setShowBar ? 2 : 1) * FONT_H;
-	int ycount = (surface->height - y - FONT_H - 1) / (FONT_H + BYTES_VERTICALSPACE);
-	int xcount = (surface->width / FONT_W) - (setOffsetShow ? setOffsetLenght + 1 : 0) - 3;
-	xcount /= (3 + 1);
+	_shResizeWindow(surface);
 
-	_shRecalculateBuffer(shFilePosition, xcount * ycount);
+	// Save these information on stack to speed-up for cycles
+	int xcount = shBytesPerLine;
+	int ycount = shLinesPerPage;
+	unsigned char *bufHex = _shRecalculateBuffer(shPagePos, xcount * ycount);
+	unsigned char *bufChar = bufHex;
 	for (j = 0; j < ycount; j++)
 	{
 		int curX = x;
@@ -171,7 +186,7 @@ void shDrawBody(Surface *surface)
 
 		if (setOffsetShow)
 		{
-			_shDrawHex(surface, 0, 0, curY, 0x12345678, setOffsetLenght);
+			_shDrawHex(surface, 0, 0, curY, shPagePos + j * shBytesPerLine, setOffsetLenght);
 			curX += setOffsetLenght + 1;
 		}
 		for (i = 0; i < xcount; i++)
@@ -238,6 +253,7 @@ bool shOpenFile(const char *strFilename)
 	shFilenameTitle[0] = '\0';
 	shFilePosition = 0;
 	shCursorPos = 0;
+	shPagePos = 0;
 	shFileLength = FileSeek(shFile, 0, Seek_End);
 	FileSeek(shFile, 0, Seek_Begin),
 	_shResetBuffer();
@@ -257,14 +273,45 @@ void shInputControl()
 	InputData data;
 	InputUpdate(&data);
 
-	if (data.inPs.left)
+	int prev = shCursorPos;
+	if (data.repeat.inPs.left)
 	{
 		if (shCursorPos > 0)
 			shCursorPos--;
 	}
-	if (data.inPs.right)
+	else if (data.repeat.inPs.right)
 	{
 		if (shCursorPos < shFileLength)
 			shCursorPos++;
+	}
+	if (data.repeat.inPs.up)
+	{
+		if (shCursorPos > shBytesPerLine)
+			shCursorPos -= shBytesPerLine;
+		else
+			shCursorPos = 0;
+	}
+	else if (data.repeat.inPs.down)
+	{
+		if (shCursorPos + shBytesPerLine < shFileLength)
+			shCursorPos += shBytesPerLine;
+		else
+			shCursorPos = shFileLength - 1;
+	}
+
+	if (prev != shCursorPos)
+	{
+		if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+		{
+			while (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+				shPagePos += shBytesPerLine;
+		}
+		else if (shCursorPos < shPagePos)
+		{
+			while (shCursorPos < shPagePos)
+				shPagePos -= shBytesPerLine;
+			if (shPagePos < 0)
+				shPagePos = 0;
+		}
 	}
 }
