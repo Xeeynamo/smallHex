@@ -22,6 +22,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(_WIN32)
 #include <windows.h>
+
+typedef struct
+{
+	HANDLE hDir;
+	WIN32_FIND_DATA FindData;
+} DirectoryData;
+
 #elif defined(PLATFORM_PSP2)
 #include <psp2/types.h>
 #include <psp2/io/fcntl.h>
@@ -152,9 +159,54 @@ signed long long FileSeek(File file, signed long long offset, unsigned int mode)
 	return -1;
 }
 
+bool FileRemove(const char *strFilename)
+{
+#if defined(_WIN32)
+	return DeleteFile(strFilename) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoRemove(strFilename) >= 0;
+#endif
+	return false;
+}
+bool FileRename(const char *strFilename, const char *strNewFilename)
+{
+#if defined(_WIN32)
+	return MoveFile(strFilename, strNewFilename) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoRename(strFilename, strNewFilename) >= 0;
+#endif
+	return false;
+}
+
 Directory DirectoryOpen(const char *strDirectoryname)
 {
 #if defined(_WIN32)
+	const char *str = strDirectoryname;
+	char tmp[MAX_PATH];
+	int length = strlen(strDirectoryname);
+	memcpy(tmp, strDirectoryname, length);
+	switch(tmp[length - 1])
+	{
+	case '\\':
+	case '/':
+		break;
+	default:
+		tmp[length++] = '\\';
+}
+	tmp[length + 0] = '*';
+	tmp[length + 1] = '\0';
+
+	WIN32_FIND_DATA findData;
+	HANDLE h = FindFirstFile(tmp, &findData);
+	if (h == INVALID_HANDLE_VALUE)
+		return DirectoryInvalid;
+	else
+	{
+		DirectoryData *dirData = (DirectoryData*)MemoryAlloc(sizeof(DirectoryData));
+		dirData->hDir = h;
+		dirData->FindData = findData;
+		return (Directory)dirData;
+	}
 #elif defined(PLATFORM_PSP2)
 	SceUID id = sceIoDopen(strDirectoryname);
 	if (id < 0)
@@ -169,6 +221,24 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 	if (directory == DirectoryInvalid)
 		return Directory_Error;
 #if defined(_WIN32)
+	DirectoryData *dirData = (DirectoryData*)directory;
+	strncpy(entry->name, dirData->FindData.cFileName, MAX_PATH);
+
+	entry->length = dirData->FindData.nFileSizeLow;
+	bool isreadonly = (dirData->FindData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
+	bool ishidden = (dirData->FindData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	bool issystem = (dirData->FindData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0;
+	bool isdirectory = (dirData->FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+	if (isdirectory)
+		entry->length = -1;
+	BOOL ret = FindNextFile(dirData->hDir, &dirData->FindData);
+	if (ret == FALSE)
+	{
+		if (GetLastError() == ERROR_NO_MORE_FILES)
+			return Directory_EndOfEntries;
+		return Directory_EndOfEntries;
+	}
+	return Directory_Continue;
 #elif defined(PLATFORM_PSP2)
 	SceIoDirent dir;
 	int res = sceIoDread((SceUID)directory, &dir);
@@ -188,7 +258,47 @@ void DirectoryClose(Directory directory)
 	if (directory == DirectoryInvalid)
 		return;
 #if defined(_WIN32)
+	DirectoryData *dirData = (DirectoryData*)directory;
+	FindClose(dirData->hDir);
+	MemoryFree(dirData);
 #elif defined(PLATFORM_PSP2)
 	sceIoDclose((SceUID)directory);
 #endif
+}
+
+bool DirectoryCreate(const char *strDirectoryName)
+{
+#if defined(_WIN32)
+	return CreateDirectory(strDirectoryName, NULL) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoMkdir(strDirectoryName, 0777) >= 0;
+#endif
+	return false;
+}
+bool DirectoryRemove(const char *strDirectoryName)
+{
+#if defined(_WIN32)
+	return RemoveDirectory(strDirectoryName) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoRmdir(strDirectoryName) >= 0;
+#endif
+	return false;
+}
+bool DirectoryRename(const char *strDirectoryName, const char *strNewDirectoryName)
+{
+#if defined(_WIN32)
+	return MoveFile(strDirectoryName, strNewDirectoryName) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoRename(strDirectoryName, strNewDirectoryName) >= 0;
+#endif
+	return false;
+}
+bool DirectoryChange(const char *strDirectoryName)
+{
+#if defined(_WIN32)
+	return SetCurrentDirectory(strDirectoryName) != 0;
+#elif defined(PLATFORM_PSP2)
+	return sceIoChdir(strDirectoryName) >= 0;
+#endif
+	return false;
 }
