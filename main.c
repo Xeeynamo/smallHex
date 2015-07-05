@@ -38,11 +38,7 @@ int main()
 		Surface surface;
 		GraphicsSetTitle(APP_TITLE);
 		shInit();
-#if defined(_DEBUG) && defined(_WIN32)
-		shOpenFile("D:\\SONIC1.BIN");
-#else
 		shOpenFileDialog(&surface, DefaultFont);
-#endif
 		while (1)
 		{
 			GetCurrentBuffer(&surface);
