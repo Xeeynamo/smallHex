@@ -71,6 +71,27 @@ bool FontCreate(Font *font, FontType type, Color32 foreColor, Color32 backColor)
 //! \brief destroy a font previously created
 void FontDestroy(Font font);
 
+//! \brief get the maximum width of a font
+//! \param[in] font to check
+//! \return maximum width between all letters of specified font set
+int FontGetMaxWidth(Font font);
+
+//! \brief get the width of a character
+//! \param[in] font to check
+//! \param[in] ch character to check
+//! \return width of specified character of specified font
+int FontGetWidth(Font font, unsigned int ch);
+
+//! \brief get the height of a font
+//! \param[in] font to check
+//! \return height of specified font
+int FontGetHeight(Font font);
+
+//! \brief get the type of a font
+//! \param[in] font to check
+//! \return type of specified font
+FontType FontGetType(Font font);
+
 //! \brief faster way to draw a character; background black, foreground white
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the character will be drawn

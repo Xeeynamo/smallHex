@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
+	FontType type;
 	unsigned int width;
 	unsigned int height;
 	unsigned int startch;
@@ -44,6 +45,7 @@ typedef struct
 
 Font DefaultFont = NULL;
 unsigned int font8_un32[NCHARS_ROW * NCHARS_COL * CHAR_SIZE2x2];
+_FontStructure DefaultFontStruture = { Font_Msx, 8, 8, 0, 0x100, RGB8(0xFF, 0xFF, 0xFF), RGB8(0x00, 0x00, 0x00), 8 * 8 * sizeof(int), font8_un32 };
 
 void _UnpackFont8_1bpp(unsigned int *fontDst, const unsigned char *fontSrc, unsigned int foreColor, unsigned int backColor)
 {
@@ -128,6 +130,37 @@ void FontDestroy(Font font)
 		MemoryFree(((_FontStructure*)font)->data);
 		MemoryFree(font);
 	}
+}
+int FontGetMaxWidth(Font font)
+{
+	_FontStructure *f;
+	if (font == DefaultFont)
+		f = &DefaultFontStruture;
+	else
+		f = (_FontStructure*)font;
+	return f->width;
+}
+int FontGetWidth(Font font, unsigned int ch)
+{
+	return FontGetMaxWidth(font);
+}
+int FontGetHeight(Font font)
+{
+	_FontStructure *f;
+	if (font == DefaultFont)
+		f = &DefaultFontStruture;
+	else
+		f = (_FontStructure*)font;
+	return f->height;
+}
+FontType FontGetType(Font font)
+{
+	_FontStructure *f;
+	if (font == DefaultFont)
+		f = &DefaultFontStruture;
+	else
+		f = (_FontStructure*)font;
+	return f->type;
 }
 
 //////////////////////////////////////////////////////////////////////////
