@@ -74,7 +74,7 @@ static void *alloc_gpu_mem(uint32_t type, uint32_t size, uint32_t attribs, SceUI
 	int ret;
 	void *mem = NULL;
 
-	if (type == PSP2_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW)
+	if (type == SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW)
 		size = align_mem(size, 256 * 1024);
 	else
 		size = align_mem(size, 4 * 1024);
@@ -106,8 +106,8 @@ static int create_framebuffer(SceUID *uid, SceDisplayFrameBuf *fb)
 	fb->width = PSP2_SCREEN_WIDTH;
 	fb->height = PSP2_SCREEN_HEIGHT;
 
-	fb->base = alloc_gpu_mem(PSP2_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
-		PSP2_SCREEN_WIDTH * PSP2_SCREEN_HEIGHT * sizeof(int), PSP2_GXM_MEMORY_ATTRIB_RW, uid);
+	fb->base = alloc_gpu_mem(SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+		PSP2_SCREEN_WIDTH * PSP2_SCREEN_HEIGHT * sizeof(int), SCE_GXM_MEMORY_ATTRIB_RW, uid);
 	return fb->base == NULL ? -1 : 0;
 }
 #endif
