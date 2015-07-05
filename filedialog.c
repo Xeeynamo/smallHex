@@ -16,14 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include "filedilaog.h"
+#include "system.h"
+#include "graphics.h"
+#include "Input.h"
 
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(PLATFORM_PSP2)
 #endif
 
-FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, const char *extfilter, const char *directory)
+#define FILEDIALOG_USE_NATIVE 0
+
+static const char *FILEDIALOG_SIZEID[] =
+{
+	" B", "KB", "MB", "GB",
+};
+
+FileDialogResult _NativeFileDialogOpen(char *filename, const char *extfilter, const char *directory)
 {
 #if defined(_WIN32)
 	OPENFILENAME ofn;
@@ -47,8 +58,107 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	DWORD err = CommDlgExtendedError();
 	if (err == 0)
 		return FileDialogResult_Cancel;
-#elif defined(PLATFORM_PSP2)
-
 #endif
 	return FileDialogResult_Error;
+}
+
+#define TITLEBAR_BG_COLOR RGB8(0xC0, 0xC0, 0xC0)
+#define TITLEBAR_FG_COLOR RGB8(0x00, 0x00, 0x00)
+#define SELECTION_COLOR RGB8(0xFF, 0x00, 0x00)
+
+FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, const char *extfilter, const char *directory)
+{
+#if FILEDIALOG_USE_NATIVE != 0 && defined(_WIN32)
+	return _NativeFileDialogOpen(filename, extfilter, directory);
+#else
+	int i;
+	int fonth = FontGetHeight(font);
+	bool cycle = true;
+	Directory curDir = DirectoryInvalid;
+	FileDialogResult result = FileDialogResult_Error;
+	DirectoryEntry entry[1024];
+	int entriesCount = 0;
+	char strCurDir[MAX_PATH] = ".";
+	Font titleBarFont = DefaultFont;
+	Font selectedFont = DefaultFont;
+	int curSelection = 1;
+	FontCreate(&titleBarFont, FontGetType(font), TITLEBAR_FG_COLOR, TITLEBAR_BG_COLOR);
+	FontCreate(&selectedFont, FontGetType(font), SELECTION_COLOR, 0);
+	do 
+	{
+		InputData input;
+		GetCurrentBuffer(surface);
+		ClearSurface(surface, 0);
+
+		// Re-open current directory, if needed
+		if (curDir == DirectoryInvalid)
+		{
+			entriesCount = 0;
+			curDir = DirectoryOpen(strCurDir);
+			if (curDir == DirectoryInvalid)
+				break;
+			for (i = 0; i < sizeof(entry) / sizeof(*entry) && DirectoryNext(curDir, &entry[i]) == Directory_Continue; i++);
+			entriesCount = i;
+			DirectoryClose(curDir);
+		}
+
+		// Draw title bar
+		FillRectangle(surface, 0, 0, surface->width, fonth * 2, TITLEBAR_BG_COLOR);
+		DrawString(surface, titleBarFont, 0, 0, "Please select a file to open:");
+		DrawString(surface, titleBarFont, 0, fonth, strCurDir);
+
+		// Draw file list
+		for (i = 1; i < surface->height / fonth && i < entriesCount; i++)
+		{
+			DirectoryEntry *e = &entry[i];
+			int y = (i + 2) * fonth;
+			Font curFont = curSelection == i ? selectedFont : font;
+
+			if (e->length > 0)
+			{
+				char buf[10];
+				int size = e->length;
+				int sizeId;
+				for (sizeId = 0; size >= 1000; size /= 1024, sizeId++);
+				if (size == 0)
+					size = 1;
+				sprintf(buf, "%3i%s", size, FILEDIALOG_SIZEID[sizeId]);
+				DrawString(surface, curFont, 1 * 8, y, buf);
+			}
+			DrawString(surface, curFont, 7 * 8, y, entry[i].name);
+		}
+
+		// Input management
+		InputUpdate(&input);
+		if (input.repeat.inPs.up)
+		{
+			if (--curSelection < 1)
+				curSelection = 1;
+		}
+		else if (input.repeat.inPs.down)
+		{
+			if (++curSelection >= entriesCount)
+				curSelection = entriesCount;
+		}
+		if (input.repeat.inPs.circle)
+		{
+			cycle = false;
+			return FileDialogResult_Cancel;
+
+		}
+		else if (input.repeat.inPs.cross)
+		{
+			cycle = false;
+			sprintf(filename, "%s/%s", strCurDir, entry[i].name);
+			return FileDialogResult_Ok;
+		}
+
+		// Swap buffer
+		GraphicsSwapBuffers(true);
+	} while (cycle);
+
+	FontDestroy(titleBarFont);
+	FontDestroy(selectedFont);
+	return result;
+#endif
 }
