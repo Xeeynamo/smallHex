@@ -96,11 +96,26 @@ void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, uns
 }
 void _shDrawCursor(Surface *surface, int pos, int xcount, int ycount)
 {
-	int x = (shPosxHex + (pos % xcount) * 3) * FONT_W;
+	int xx = pos % xcount;
 	int y = (pos / xcount - shPagePos / xcount) * (FONT_H + BYTES_VERTICALSPACE) + (setShowBar ? 2 : 1) * FONT_H;
+	int group = shSetBytesGroup;
+	int x = shPosxHex;
+	while (xx--)
+		if (--group)
+			x += 2;
+		else
+		{
+			group = shSetBytesGroup;
+			x += 3;
+		}
+	x *= FONT_W;
 
 	_shDrawHex(surface, fontHexSelected, x, y, shBuffer[pos], 2);
 	FillRectangle(surface, x, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
+
+	x = (shPosxChar + (pos % xcount)) * FONT_W;
+	DrawChar(surface, fontHexSelected, x, y, shBuffer[pos]);
+	FillRectangle(surface, x, y + FONT_H, FONT_W, 1, HEXCURSOR_FORE);
 }
 void _shAssignTitle(int maxlength, const char *title)
 {
@@ -190,7 +205,6 @@ void shDrawTitleBar(Surface *surface)
 void shDrawBody(Surface *surface)
 {
 	int i, j;
-	int x = 1;
 	int y = (setShowBar ? 2 : 1) * FONT_H;
 	if (shSetInvalidate)
 	{
@@ -202,7 +216,6 @@ void shDrawBody(Surface *surface)
 	int remainsBytes = shFileLength - shPagePos;
 	int xcount = shBytesPerLine;
 	int ycount = shLinesPerPage;
-	unsigned int xchars = x + setOffsetLenght + 1;
 	unsigned char *bufHex = _shRecalculateBuffer(shPagePos, xcount * ycount);
 	unsigned char *bufChar = bufHex;
 	for (j = 0; j < ycount && remainsBytes >= 0; j++)
@@ -232,11 +245,10 @@ void shDrawBody(Surface *surface)
 			remainsBytes = i;
 		else
 			remainsBytes += xcount;
+		// Draw characters
 		curX = shPosxChar;
 		for (i = 0; i < xcount && remainsBytes > 0; i++, remainsBytes--)
-		{
 			DrawChar8(surface, curX++ * FONT_W, curY, _shHexToChar(*bufChar++));
-		}
 	}
 	_shDrawCursor(surface, shCursorPos, xcount, ycount);
 }
