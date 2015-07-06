@@ -316,45 +316,44 @@ void shInputControl()
 	InputData data;
 	InputUpdate(&data);
 
-	int prev = shCursorPos;
+	int move = 0;
 	if (data.repeat.inPs.left)
-	{
-		if (shCursorPos > 0)
-			shCursorPos--;
-	}
+		move -= 1;
 	else if (data.repeat.inPs.right)
-	{
-		if (shCursorPos < shFileLength - 1)
-			shCursorPos++;
-	}
+		move += 1;
 	if (data.repeat.inPs.up)
-	{
-		if (shCursorPos > shBytesPerLine)
-			shCursorPos -= shBytesPerLine;
-		else
-			shCursorPos = 0;
-	}
+		move -= shBytesPerLine;
 	else if (data.repeat.inPs.down)
-	{
-		if (shCursorPos + shBytesPerLine < shFileLength)
-			shCursorPos += shBytesPerLine;
-		else
-			shCursorPos = shFileLength - 1;
-	}
+		move += shBytesPerLine;
+	else if (data.repeat.inPc.pgup)
+		move -= shBytesPerLine * shLinesPerPage;
+	else if (data.repeat.inPc.pgdown)
+		move += shBytesPerLine * shLinesPerPage;
+	else if (data.ly != 0)
+		move += data.ly * shBytesPerLine * shLinesPerPage / 32767;
 
-	if (prev != shCursorPos)
+	if (move != 0)
 	{
-		if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+		move = shCursorPos + move;
+		if (move >= shFileLength)
+			move = shFileLength - 1;
+		if (move < 0) // not else if, just in case the file length is 0
+			move = 0;
+		if (shCursorPos != move)
 		{
-			while (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
-				shPagePos += shBytesPerLine;
-		}
-		else if (shCursorPos < shPagePos)
-		{
-			while (shCursorPos < shPagePos)
-				shPagePos -= shBytesPerLine;
-			if (shPagePos < 0)
-				shPagePos = 0;
+			shCursorPos = move;
+			if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+			{
+				while (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+					shPagePos += shBytesPerLine;
+			}
+			else if (shCursorPos < shPagePos)
+			{
+				while (shCursorPos < shPagePos)
+					shPagePos -= shBytesPerLine;
+				if (shPagePos < 0)
+					shPagePos = 0;
+			}
 		}
 	}
 }
