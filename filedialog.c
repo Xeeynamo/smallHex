@@ -177,6 +177,7 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	bool cycle = false; // used to validate 'directory' as a valid folder
 	FileDialogResult result = FileDialogResult_Error; // default return value
 	int curSelection = 0; // current entry selected
+	bool invalidate = true; // demand a new rendering
 
 	char strCurDir[MAX_PATH]; // current directory path
 	char tmpCurDir[MAX_PATH]; // temporarely directory path
@@ -230,6 +231,7 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 				else if (timerMsg < 0)
 					curMsg = MESSAGE_DEFAULT;
 			}
+			invalidate = true;
 		}
 
 		// Update message
@@ -237,35 +239,10 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 		{
 			timerMsg--;
 			if (timerMsg <= 0)
-				curMsg = MESSAGE_DEFAULT;
-		}
-
-		// Draw title bar
-		FillRectangle(surface, 0, 0, surface->width, fonth * 2, TITLEBAR_BG_COLOR);
-		DrawString(surface, titleBarFont, 0, 0, MSG[curMsg]);
-		DrawString(surface, titleBarFont, 0, fonth, strCurDir);
-
-		// Draw file list
-		for (i = 0; i < surface->height / fonth && i < entriesCount; i++)
-		{
-			DirectoryEntry *e = &entry[i];
-			int y = (i + 3) * fonth;
-			Font curFont = curSelection == i ? selectedFont : font;
-
-			if (e->length > 0)
 			{
-				char buf[10];
-				int size = e->length;
-				int sizeId;
-				for (sizeId = 0; size >= 1000; size /= 1024, sizeId++);
-				if (size == 0)
-					size = 1;
-				sprintf(buf, "%3i%s", size, FILEDIALOG_SIZEID[sizeId]);
-				DrawString(surface, curFont, 1 * 8, y, buf);
+				curMsg = MESSAGE_DEFAULT;
+				invalidate = true;
 			}
-			else
-				DrawChar(surface, curFont, 5 * 8, y, 'D');
-			DrawString(surface, curFont, 7 * 8, y, entry[i].name);
 		}
 
 		// Input management
@@ -274,16 +251,19 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 		{
 			if (--curSelection < 1)
 				curSelection = 0;
+			invalidate = true;
 		}
 		else if (input.repeat.inPs.down)
 		{
 			if (++curSelection >= entriesCount)
 				curSelection = entriesCount;
+			invalidate = true;
 		}
 		else if (input.repeat.inPs.left)
 		{
 			_FolderLeave(strCurDir);
 			curDir = DirectoryInvalid;
+			invalidate = true;
 		}
 		if (input.repeat.inPs.cross || input.repeat.inPs.right)
 		{
@@ -301,6 +281,7 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 			{
 				_FolderEnter(strCurDir, e->name);
 				curDir = DirectoryInvalid;
+				invalidate = true;
 			}
 		}
 		else if (input.repeat.inPs.circle)
@@ -309,8 +290,40 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 			result = FileDialogResult_Cancel;
 		}
 
-		// Swap buffer
-		GraphicsSwapBuffers(true);
+		if (invalidate)
+		{
+			invalidate = false;
+			// Draw title bar
+			FillRectangle(surface, 0, 0, surface->width, fonth * 2, TITLEBAR_BG_COLOR);
+			DrawString(surface, titleBarFont, 0, 0, MSG[curMsg]);
+			DrawString(surface, titleBarFont, 0, fonth, strCurDir);
+
+			// Draw file list
+			for (i = 0; i < surface->height / fonth && i < entriesCount; i++)
+			{
+				DirectoryEntry *e = &entry[i];
+				int y = (i + 3) * fonth;
+				Font curFont = curSelection == i ? selectedFont : font;
+
+				if (e->length > 0)
+				{
+					char buf[10];
+					int size = e->length;
+					int sizeId;
+					for (sizeId = 0; size >= 1000; size /= 1024, sizeId++);
+					if (size == 0)
+						size = 1;
+					sprintf(buf, "%3i%s", size, FILEDIALOG_SIZEID[sizeId]);
+					DrawString(surface, curFont, 1 * 8, y, buf);
+				}
+				else
+					DrawChar(surface, curFont, 5 * 8, y, 'D');
+				DrawString(surface, curFont, 7 * 8, y, entry[i].name);
+			}
+			// Swap buffer
+			GraphicsSwapBuffers();
+		}
+		GraphicsWaitVSync();
 	} while (cycle);
 
 	FontDestroy(titleBarFont);
