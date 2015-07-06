@@ -31,6 +31,8 @@ typedef struct
 	unsigned int left : 1;
 	unsigned int pgup : 1;
 	unsigned int pgdown : 1;
+	unsigned int dummy10 : 1;
+	unsigned int dummy11 : 1;
 	unsigned int operation : 1;
 	unsigned int back : 1;
 	unsigned int select : 1;
@@ -48,6 +50,8 @@ typedef struct
 	unsigned int left : 1;
 	unsigned int ltrigger : 1;
 	unsigned int rtrigger : 1;
+	unsigned int dummy10 : 1;
+	unsigned int dummy11 : 1;
 	unsigned int triangle : 1;
 	unsigned int circle : 1;
 	unsigned int cross : 1;
