@@ -22,6 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "input.h"
 #include "filedilaog.h"
 
+#if defined(_WIN32)
+#define INITIAL_DIRECTORY "."
+#elif defined(PLATFORM_PSP2)
+#define INITIAL_DIRECTORY "pss0:/top/Documents/"
+#endif
+
 #define BUFFER_LENGTH 32768
 
 #define TITLEBAR_BG_COLOR RGB8(0xC0, 0xC0, 0xC0)
@@ -52,17 +58,21 @@ int shBufferShowed;
 int shFilePosition;
 
 // Settings variables
+bool shSetInvalidate;
 bool setShowBar = true;
 bool setOffsetShow = true;
-bool setOffsetLenght = 7;
-bool setBytesPerLine = 16;
-bool setBytesGroup = 1;
+int setOffsetLenght = 7;
+int setBytesPerLine = 16;
+int shSetBytesGroup = 2;
 
 // Hex editor itself
-int shBytesPerLine;
+int shBytesPerLine = 0;
 int shLinesPerPage;
 int shCursorPos;
 int shPagePos;
+int shPosxOffset;
+int shPosxHex;
+int shPosxChar;
 
 static const char Hex2Char[] =
 {
@@ -75,22 +85,22 @@ static const char Hex2Char[] =
 void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, unsigned int value, unsigned int units)
 {
 	unsigned int sh = 0;
-	x += units * 8;
+	x += (units - 1) * FONT_W;
 	while (units--)
 	{
 		unsigned int n = (value >> sh) & 0xF;
 		sh += 4;
 		DrawChar(surface, font, x, y, Hex2Char[n]);
-		x -= 8;
+		x -= FONT_W;
 	}
 }
 void _shDrawCursor(Surface *surface, int pos, int xcount, int ycount)
 {
-	int x = ((pos % xcount) * 3 + 1 + (setOffsetShow ? setOffsetLenght + 1 : 0)) * FONT_W;
+	int x = (shPosxHex + (pos % xcount) * 3) * FONT_W;
 	int y = (pos / xcount - shPagePos / xcount) * (FONT_H + BYTES_VERTICALSPACE) + (setShowBar ? 2 : 1) * FONT_H;
 
 	_shDrawHex(surface, fontHexSelected, x, y, shBuffer[pos], 2);
-	FillRectangle(surface, x + FONT_W, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
+	FillRectangle(surface, x, y + FONT_H, FONT_W * 2, 1, HEXCURSOR_FORE);
 }
 void _shAssignTitle(int maxlength, const char *title)
 {
@@ -134,18 +144,29 @@ unsigned char *_shRecalculateBuffer(int position, int length)
 	else
 		return shBuffer + startPos;
 }
+
 void _shResizeWindow(Surface *surface)
 {
 	int y = (setShowBar ? 2 : 1) * FONT_H;
 
+	shPosxOffset = 0;
+	shPosxHex = setOffsetShow ? setOffsetLenght + 2 : 1;
 	shLinesPerPage = (surface->height - y - FONT_H - 1) / (FONT_H + BYTES_VERTICALSPACE);
-	shBytesPerLine = (surface->width / FONT_W) - (setOffsetShow ? setOffsetLenght + 1 : 0) - 3;
-	shBytesPerLine /= (3 + 1);
+	shBytesPerLine = (surface->width / FONT_W) - shPosxHex - (FONT_H + 2);
+	shBytesPerLine = shBytesPerLine * shSetBytesGroup / (2 * (shSetBytesGroup + 1));
+	shPosxChar = shPosxHex + 2 * shBytesPerLine + (shBytesPerLine / shSetBytesGroup);
+}
+
+void _shSetBytesGroup(int group)
+{
+	shSetBytesGroup = group;
+	shSetInvalidate = true;
 }
 
 void shInit()
 {
 	shFile = FileInvalid;
+	shSetInvalidate = true;
 	FontCreate(&fontBar, Font_Msx, RGB8(0x00, 0x00, 0x00), TITLEBAR_BG_COLOR);
 	FontCreate(&fontHexSelected, Font_Msx, HEXCURSOR_FORE, HEXCURSOR_BACK);
 	InputInit();
@@ -171,40 +192,50 @@ void shDrawBody(Surface *surface)
 	int i, j;
 	int x = 1;
 	int y = (setShowBar ? 2 : 1) * FONT_H;
-	_shResizeWindow(surface);
+	if (shSetInvalidate)
+	{
+		_shResizeWindow(surface);
+		shSetInvalidate = false;
+	}
 
 	// Save these information on stack to speed-up for cycles
+	int remainsBytes = shFileLength - shPagePos;
 	int xcount = shBytesPerLine;
 	int ycount = shLinesPerPage;
+	unsigned int xchars = x + setOffsetLenght + 1;
 	unsigned char *bufHex = _shRecalculateBuffer(shPagePos, xcount * ycount);
 	unsigned char *bufChar = bufHex;
-	for (j = 0; j < ycount; j++)
+	for (j = 0; j < ycount && remainsBytes >= 0; j++)
 	{
-		int curX = x;
+		int curX;
 		int curY = y + j * (FONT_H + BYTES_VERTICALSPACE);
-		int group = setBytesGroup;
+		int group = shSetBytesGroup;
 
 		if (setOffsetShow)
+			_shDrawHex(surface, 0, shPosxOffset, curY, shPagePos + j * shBytesPerLine, setOffsetLenght);
+
+		curX = shPosxHex;
+		for (i = 0; i < xcount && remainsBytes > 0; i++, remainsBytes--)
 		{
-			_shDrawHex(surface, 0, 0, curY, shPagePos + j * shBytesPerLine, setOffsetLenght);
-			curX += setOffsetLenght + 1;
-		}
-		for (i = 0; i < xcount; i++)
-		{
-			_shDrawHex(surface, 0, curX * 8, curY, *bufHex++, 2);
+			_shDrawHex(surface, 0, curX * FONT_W, curY, *bufHex++, 2);
 			if (--group)
 				curX += 2;
 			else
 			{
-				group = setBytesGroup;
+				group = shSetBytesGroup;
 				curX += 3;
 			}
 		}
-		curX += 1;
 
-		for (i = 0; i < xcount; i++)
+		// definitely not a fashion way, but at least it works...
+		if (remainsBytes <= 0)
+			remainsBytes = i;
+		else
+			remainsBytes += xcount;
+		curX = shPosxChar;
+		for (i = 0; i < xcount && remainsBytes > 0; i++, remainsBytes--)
 		{
-			DrawChar8(surface, curX++ * 8, curY, _shHexToChar(*bufChar++));
+			DrawChar8(surface, curX++ * FONT_W, curY, _shHexToChar(*bufChar++));
 		}
 	}
 	_shDrawCursor(surface, shCursorPos, xcount, ycount);
@@ -214,7 +245,7 @@ void shDrawBody(Surface *surface)
 bool shOpenFileDialog(Surface *surface, Font font)
 {
 	char fn[MAX_PATH];
-	FileDialogResult r = FileDialogOpen(surface, font, fn, 0, 0);
+	FileDialogResult r = FileDialogOpen(surface, font, fn, 0, INITIAL_DIRECTORY);
 	switch (r)
 	{
 	case FileDialogResult_Ok:
@@ -281,7 +312,7 @@ void shInputControl()
 	}
 	else if (data.repeat.inPs.right)
 	{
-		if (shCursorPos < shFileLength)
+		if (shCursorPos < shFileLength - 1)
 			shCursorPos++;
 	}
 	if (data.repeat.inPs.up)
