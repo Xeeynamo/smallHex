@@ -47,6 +47,7 @@ int main()
 			shDrawTitleBar(&surface);
 			shDrawBody(&surface);
 			GraphicsSwapBuffers(true);
+			GraphicsWaitVSync();
 		}
 		shDestroy();
 		DrawDestroy();

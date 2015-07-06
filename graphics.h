@@ -40,9 +40,14 @@ int GraphicsDestroy();
 //! \param[in] title to set
 void GraphicsSetTitle(const char *title);
 
+//! \brief pause current thread until vsync interrupt
+/** \details await time is usually 1000/60 milliseconds. It's reccomended
+ * to call this right after GraphicsSwapBuffers.
+ */
+void GraphicsWaitVSync();
+
 //! \brief present current buffer to screen
-//! \param[in] waitvsync true if SwapBuffer will syncronize with screen refresh
-void GraphicsSwapBuffers(bool waitvsync);
+void GraphicsSwapBuffers();
 
 //! \brief get current buffer as a surface item
 //! \param[out] surface direct access of current buffer

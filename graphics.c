@@ -195,18 +195,21 @@ void GraphicsSetTitle(const char *title)
 #endif
 }
 
-void GraphicsSwapBuffers(bool waitvsync)
+void GraphicsWaitVSync()
+{
+#if defined(_WIN32)
+	Sleep(15);
+#elif defined(PLATFORM_PSP2)
+	sceDisplayWaitVblankStart();
+#endif
+}
+void GraphicsSwapBuffers()
 {
 #if defined(_WIN32)
 	BitBlt(curDc, 0, 0, curSurface.width, curSurface.height, backDc, 0, 0, SRCCOPY);
-	if (waitvsync)
-		Sleep(15);
-
 #elif defined(PLATFORM_PSP2)
 	sceDisplaySetFrameBuf(&fb[cur_fb], PSP2_DISPLAY_SETBUF_NEXTFRAME);
 	cur_fb ^= 1;
-	if (waitvsync == true)
-		sceDisplayWaitVblankStart();
 #endif
 }
 void GetCurrentBuffer(Surface *surface)
