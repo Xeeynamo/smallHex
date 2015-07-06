@@ -218,6 +218,7 @@ Directory DirectoryOpen(const char *strDirectoryname)
 }
 DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 {
+	DirectoryResult result = Directory_Error;
 	if (directory == DirectoryInvalid)
 		return Directory_Error;
 #if defined(_WIN32)
@@ -238,20 +239,32 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 			return Directory_EndOfEntries;
 		return Directory_EndOfEntries;
 	}
-	return Directory_Continue;
+	result = Directory_Continue;
 #elif defined(PLATFORM_PSP2)
 	SceIoDirent dir;
 	int res = sceIoDread((SceUID)directory, &dir);
 	if (res < 0)
 		return Directory_Error;
 	strcpy(entry->name, dir.d_name);
-	if ((dir.d_stat.st_mode & 0x0010) != 0)
+	if (PSP2_S_ISDIR(dir.d_stat.st_mode))
 		entry->length = -1;
 	else
 		entry->length = dir.d_stat.st_size;
-	return res == 0 ? Directory_EndOfEntries : Directory_Continue;
+	result = res == 0 ? Directory_EndOfEntries : Directory_Continue;
 #endif
-	return Directory_Error;
+	// Check for "." or ".."
+	if (result == Directory_Continue)
+	{
+		if (entry->length < 0 && entry->name[0] == '.')
+		{
+			// Probably it's the directory pointer, do more checks
+			if (entry->name[1] == '\0' ||
+				(entry->name[1] == '.' && entry->name[2] == '\0'))
+				// it is, recursively call again DirectoryNext
+				return DirectoryNext(directory, entry);
+		}
+	}
+	return result;
 }
 void DirectoryClose(Directory directory)
 {
@@ -298,7 +311,7 @@ bool DirectoryChange(const char *strDirectoryName)
 #if defined(_WIN32)
 	return SetCurrentDirectory(strDirectoryName) != 0;
 #elif defined(PLATFORM_PSP2)
-	return sceIoChdir(strDirectoryName) >= 0;
+	//return sceIoChdir(strDirectoryName) >= 0;
 #endif
 	return false;
 }
