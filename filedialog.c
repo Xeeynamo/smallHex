@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <string.h>
 #include "filedilaog.h"
 #include "system.h"
 #include "graphics.h"
@@ -68,9 +69,6 @@ FileDialogResult _NativeFileDialogOpen(char *filename, const char *extfilter, co
 
 FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, const char *extfilter, const char *directory)
 {
-#if FILEDIALOG_USE_NATIVE != 0 && defined(_WIN32)
-	return _NativeFileDialogOpen(filename, extfilter, directory);
-#else
 	int i;
 	int fonth = FontGetHeight(font);
 	bool cycle = true;
@@ -78,12 +76,14 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	FileDialogResult result = FileDialogResult_Error;
 	DirectoryEntry entry[1024];
 	int entriesCount = 0;
-	char strCurDir[MAX_PATH] = ".";
+	char strCurDir[MAX_PATH];
 	Font titleBarFont = DefaultFont;
 	Font selectedFont = DefaultFont;
 	int curSelection = 1;
+
 	FontCreate(&titleBarFont, FontGetType(font), TITLEBAR_FG_COLOR, TITLEBAR_BG_COLOR);
 	FontCreate(&selectedFont, FontGetType(font), SELECTION_COLOR, 0);
+	strcpy(strCurDir, directory);
 	do 
 	{
 		InputData input;
@@ -140,17 +140,17 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 			if (++curSelection >= entriesCount)
 				curSelection = entriesCount;
 		}
-		if (input.repeat.inPs.circle)
+		if (input.repeat.inPs.cross)
+		{
+			cycle = false;
+			sprintf(filename, "%s/%s", strCurDir, entry[curSelection].name);
+			return FileDialogResult_Ok;
+
+		}
+		else if (input.repeat.inPs.circle)
 		{
 			cycle = false;
 			return FileDialogResult_Cancel;
-
-		}
-		else if (input.repeat.inPs.cross)
-		{
-			cycle = false;
-			sprintf(filename, "%s/%s", strCurDir, entry[i].name);
-			return FileDialogResult_Ok;
 		}
 
 		// Swap buffer
@@ -160,5 +160,4 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	FontDestroy(titleBarFont);
 	FontDestroy(selectedFont);
 	return result;
-#endif
 }
