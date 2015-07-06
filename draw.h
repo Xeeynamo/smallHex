@@ -118,21 +118,21 @@ void DrawChar(Surface *surface, Font font, int x, int y, unsigned int ch);
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawString8(Surface *surface, int x, int y, char *str);
+void DrawString8(Surface *surface, int x, int y, const char *str);
 
 //! \brief fast way to draw a character; can select a foreground color
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, char *str);
+void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, const char *str);
 
 //! \brief fast way to draw a character; must specify a font data
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the string will be drawn
 //! \param[in] y coordinate in pixel where the string will be drawn
 //! \param[in] str string 8-bit ASCII format; must terminate with '\0'
-void DrawString(Surface *surface, Font font, int x, int y, char *str);
+void DrawString(Surface *surface, Font font, int x, int y, const char *str);
 
 //! \brief clear an entire surface
 //! \param[in] surface to clear

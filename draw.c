@@ -232,7 +232,7 @@ void DrawChar(Surface *surface, Font font, int x, int y, unsigned int ch)
 	else
 		DrawChar8(surface, x, y, ch);
 }
-void DrawString8(Surface *surface, int x, int y, char *str)
+void DrawString8(Surface *surface, int x, int y, const char *str)
 {
 	int ch;
 	int cx = x;
@@ -256,7 +256,7 @@ void DrawString8(Surface *surface, int x, int y, char *str)
 		cx += CHAR_SIZE;
 	}
 }
-void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, char *str)
+void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, const char *str)
 {
 	if (color != 0xFFFFFFFF)
 	{
@@ -285,7 +285,7 @@ void DrawStringColored8(Surface *surface, int x, int y, unsigned int color, char
 	else
 		DrawString8(surface, x, y, str);
 }
-void DrawString(Surface *surface, Font font, int x, int y, char *str)
+void DrawString(Surface *surface, Font font, int x, int y, const char *str)
 {
 	if (font != DefaultFont)
 	{
