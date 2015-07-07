@@ -185,6 +185,8 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	DirectoryEntry entry[1024]; // entries of current folder
 	int entriesCount = 0; // number of entries found
 
+	int entriesPerPage = 1;
+	int curPage = 0;
 	int curMsg = 0; // current message showed; 0 by default
 	int timerMsg = 0; // when a message is prompt, it's displayed only temporarely
 
@@ -199,12 +201,11 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 		InputData input;
 		GetCurrentBuffer(surface);
 		ClearSurface(surface, 0);
+		entriesPerPage = surface->height / fonth - 3;
 
 		// Re-open current directory, if needed
 		if (curDir == DirectoryInvalid)
 		{
-			entriesCount = 0;
-			curSelection = 0;
 			_CompressPath(strCurDir);
 			curDir = DirectoryOpen(strCurDir);
 			if (curDir == DirectoryInvalid)
@@ -217,8 +218,11 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 			}
 			else
 			{
-				strcpy(tmpCurDir, strCurDir);
+				curPage = 0;
+				curSelection = 0;
 				cycle = true;
+				strcpy(tmpCurDir, strCurDir);
+
 				for (i = 0; i < sizeof(entry) / sizeof(*entry) && DirectoryNext(curDir, &entry[i]) == Directory_Continue; i++);
 				DirectoryClose(curDir);
 
@@ -251,12 +255,16 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 		{
 			if (--curSelection < 1)
 				curSelection = 0;
+			if (curPage > curSelection)
+				curPage = curSelection;
 			invalidate = true;
 		}
 		else if (input.repeat.inPs.down)
 		{
 			if (++curSelection >= entriesCount)
-				curSelection = entriesCount;
+				curSelection = entriesCount - 1;
+			if (entriesPerPage <= curSelection - curPage)
+				curPage = curSelection - entriesPerPage + 1;
 			invalidate = true;
 		}
 		else if (input.repeat.inPs.left)
@@ -299,11 +307,11 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 			DrawString(surface, titleBarFont, 0, fonth, strCurDir);
 
 			// Draw file list
-			for (i = 0; i < surface->height / fonth && i < entriesCount; i++)
+			for (i = 0; i < surface->height / fonth && (curPage + i) < entriesCount; i++)
 			{
-				DirectoryEntry *e = &entry[i];
+				DirectoryEntry *e = &entry[curPage + i];
 				int y = (i + 3) * fonth;
-				Font curFont = curSelection == i ? selectedFont : font;
+				Font curFont = (curSelection - curPage) == i ? selectedFont : font;
 
 				if (e->length > 0)
 				{
@@ -318,7 +326,7 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 				}
 				else
 					DrawChar(surface, curFont, 5 * 8, y, 'D');
-				DrawString(surface, curFont, 7 * 8, y, entry[i].name);
+				DrawString(surface, curFont, 7 * 8, y, e->name);
 			}
 			// Swap buffer
 			GraphicsSwapBuffers();
