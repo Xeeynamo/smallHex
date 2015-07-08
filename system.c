@@ -27,6 +27,7 @@ typedef struct
 {
 	HANDLE hDir;
 	WIN32_FIND_DATA FindData;
+	BOOL IsEnd;
 } DirectoryData;
 
 #elif defined(PLATFORM_PSP2)
@@ -205,6 +206,7 @@ Directory DirectoryOpen(const char *strDirectoryname)
 		DirectoryData *dirData = (DirectoryData*)MemoryAlloc(sizeof(DirectoryData));
 		dirData->hDir = h;
 		dirData->FindData = findData;
+		dirData->IsEnd = FALSE;
 		return (Directory)dirData;
 	}
 #elif defined(PLATFORM_PSP2)
@@ -223,6 +225,8 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 		return Directory_Error;
 #if defined(_WIN32)
 	DirectoryData *dirData = (DirectoryData*)directory;
+	if (dirData->IsEnd == TRUE)
+		return Directory_EndOfEntries;
 	strncpy(entry->name, dirData->FindData.cFileName, MAX_PATH);
 
 	entry->length = dirData->FindData.nFileSizeLow;
@@ -235,9 +239,9 @@ DirectoryResult DirectoryNext(Directory directory, DirectoryEntry *entry)
 	BOOL ret = FindNextFile(dirData->hDir, &dirData->FindData);
 	if (ret == FALSE)
 	{
-		if (GetLastError() == ERROR_NO_MORE_FILES)
-			return Directory_EndOfEntries;
-		return Directory_EndOfEntries;
+		if (GetLastError() != ERROR_NO_MORE_FILES)
+			return Directory_Error;
+		dirData->IsEnd = TRUE;
 	}
 	result = Directory_Continue;
 #elif defined(PLATFORM_PSP2)
