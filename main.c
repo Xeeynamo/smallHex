@@ -44,7 +44,19 @@ int main(int argc, char *argv[])
 		{
 			GetCurrentBuffer(&surface);
 			ClearSurface(&surface, 0);
-			shInputControl();
+
+			InputData input;
+			InputUpdate(&input);
+			if (input.repeat.inPs.select)
+			{
+				if (input.repeat.inPs.start)
+					break;
+				else
+					shOpenFileDialog(&surface, DefaultFont);
+			}
+			else
+				shInputControl(&input);
+
 			shDrawTitleBar(&surface);
 			shDrawBody(&surface);
 			GraphicsSwapBuffers(true);

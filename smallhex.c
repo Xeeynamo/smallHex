@@ -311,26 +311,23 @@ void shCloseFile()
 	FileClose(shFile);
 	shFile = FileInvalid;
 }
-void shInputControl()
+void shInputControl(InputData *input)
 {
-	InputData data;
-	InputUpdate(&data);
-
 	int move = 0;
-	if (data.repeat.inPs.left)
+	if (input->repeat.inPs.left)
 		move -= 1;
-	else if (data.repeat.inPs.right)
+	else if (input->repeat.inPs.right)
 		move += 1;
-	if (data.repeat.inPs.up)
+	if (input->repeat.inPs.up)
 		move -= shBytesPerLine;
-	else if (data.repeat.inPs.down)
+	else if (input->repeat.inPs.down)
 		move += shBytesPerLine;
-	else if (data.repeat.inPc.pgup)
+	else if (input->repeat.inPc.pgup)
 		move -= shBytesPerLine * shLinesPerPage;
-	else if (data.repeat.inPc.pgdown)
+	else if (input->repeat.inPc.pgdown)
 		move += shBytesPerLine * shLinesPerPage;
-	else if (data.ly != 0)
-		move += data.ly * shBytesPerLine * shLinesPerPage / 32767;
+	else if (input->ly != 0)
+		move += input->ly * shBytesPerLine * shLinesPerPage / 32767;
 
 	if (move != 0)
 	{
