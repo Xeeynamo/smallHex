@@ -181,9 +181,12 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 
 	char strCurDir[MAX_PATH]; // current directory path
 	char tmpCurDir[MAX_PATH]; // temporarely directory path
+	char *strDevice[32];
 	Directory curDir = DirectoryInvalid; // current directory pointer
 	DirectoryEntry entry[1024]; // entries of current folder
 	int entriesCount = 0; // number of entries found
+	int devicesCount = 0;
+	int curDevice = -1;
 
 	int entriesPerPage = 1;
 	int curPage = 0;
@@ -195,6 +198,7 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 	FontCreate(&titleBarFont, FontGetType(font), TITLEBAR_FG_COLOR, TITLEBAR_BG_COLOR);
 	FontCreate(&selectedFont, FontGetType(font), SELECTION_COLOR, 0);
 
+	devicesCount = DeviceNameEnumerate(strDevice, sizeof(strDevice) / sizeof(*strDevice));
 	strcpy(strCurDir, directory);
 	do 
 	{
@@ -310,6 +314,17 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 		{
 			cycle = false;
 			result = FileDialogResult_Cancel;
+		}
+		else if (input.repeat.inPs.select)
+		{
+			curDevice++;
+			if (curDevice >= devicesCount)
+				curDevice = -1;
+			if (curDevice == -1)
+				strcpy(strCurDir, directory);
+			else
+				strcpy(strCurDir, strDevice[curDevice]);
+			curDir = DirectoryInvalid;
 		}
 
 		if (invalidate)
