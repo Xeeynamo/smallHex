@@ -251,21 +251,35 @@ FileDialogResult FileDialogOpen(Surface *surface, Font font, char *filename, con
 
 		// Input management
 		InputUpdate(&input);
+		int move = 0;
 		if (input.repeat.inPs.up)
+			move--;
+		if (input.repeat.inPs.down)
+			move++;
+		if (input.repeat.inPs.ltrigger)
+			move -= entriesPerPage;
+		if (input.repeat.inPs.rtrigger)
+			move += entriesPerPage;
+		else if (input.ly != 0)
+			move += input.ly * 4 / 32767;
+		if (move != 0)
 		{
-			if (--curSelection < 1)
-				curSelection = 0;
-			if (curPage > curSelection)
-				curPage = curSelection;
-			invalidate = true;
-		}
-		else if (input.repeat.inPs.down)
-		{
-			if (++curSelection >= entriesCount)
+			int old = curSelection;
+			curSelection += move;
+
+			if (curSelection >= entriesCount)
 				curSelection = entriesCount - 1;
-			if (entriesPerPage <= curSelection - curPage)
-				curPage = curSelection - entriesPerPage + 1;
-			invalidate = true;
+			if (curSelection < 1)
+				curSelection = 0;
+			if (old != curSelection)
+			{
+				invalidate = true;
+				if (curPage > curSelection)
+					curPage = curSelection;
+				else if (entriesPerPage <= curSelection - curPage)
+					curPage = curSelection - entriesPerPage + 1;
+			}
+
 		}
 		else if (input.repeat.inPs.left)
 		{
