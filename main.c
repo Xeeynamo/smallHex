@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 PSP2_MODULE_INFO(0, 1, APP_TITLE)
 #endif
 
-int main()
+int main(int argc, char *argv[])
 {
 	if (CALL_FAILED(DrawInit()))
 		return -1;
@@ -38,7 +38,8 @@ int main()
 		Surface surface;
 		GraphicsSetTitle(APP_TITLE);
 		shInit();
-		shOpenFileDialog(&surface, DefaultFont);
+		if (!(argc == 2 && shOpenFile(argv[1])))
+			shOpenFileDialog(&surface, DefaultFont);
 		while (1)
 		{
 			GetCurrentBuffer(&surface);
