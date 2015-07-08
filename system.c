@@ -319,3 +319,34 @@ bool DirectoryChange(const char *strDirectoryName)
 #endif
 	return false;
 }
+
+#if defined(_WIN32)
+char DEVICE_NAME_DATA[1024];
+#elif defined(PLATFORM_PSP2)
+const char *DEVICE_NAME[] =
+{
+	"pss0:/top/",
+	"unity0:/"
+	"cache0:/",
+	NULL,
+};
+#endif
+int DeviceNameEnumerate(char **strDevName, int maxcount)
+{
+	int count = 0;
+#if defined(_WIN32)
+	const char *str = DEVICE_NAME_DATA;
+	DWORD ret = GetLogicalDriveStrings(sizeof(DEVICE_NAME_DATA), DEVICE_NAME_DATA);
+	for (; ret > 0 && count < maxcount; count++)
+	{
+		int len = strlen(str);
+		strDevName[count] = str;
+		ret -= len + 1;
+		str += len + 1;
+	}
+#elif defined(PLATFORM_PSP2)
+	for (; DEVICE_NAME[count] != NULL && count < maxcount; count++)
+		strDevName[count] = DEVICE_NAME[count];
+#endif
+	return count;
+}

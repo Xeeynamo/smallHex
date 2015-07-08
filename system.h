@@ -148,4 +148,10 @@ bool DirectoryRename(const char *strDirectoryName, const char *strNewDirectoryNa
 //! \return true if the operation did not failed
 bool DirectoryChange(const char *strDirectoryName);
 
+//! \brief get name of device entry point
+//! \param[in,out] strDevName array of string pointers
+//! \param[in] maxcount maximum number of elements that can be write on strDevName
+//! \return number of devices found
+int DeviceNameEnumerate(char **strDevName, int maxcount);
+
 #endif
