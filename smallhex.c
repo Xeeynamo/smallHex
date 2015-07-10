@@ -56,6 +56,7 @@ unsigned char shBuffer[BUFFER_LENGTH];
 int shBufferIndex;
 int shBufferShowed;
 int shFilePosition;
+bool shDrawInvalidate;
 
 // Settings variables
 bool shSetInvalidate;
@@ -182,6 +183,7 @@ void shInit()
 {
 	shFile = FileInvalid;
 	shSetInvalidate = true;
+	shDrawInvalidate = true;
 	FontCreate(&fontBar, Font_Msx, RGB8(0x00, 0x00, 0x00), TITLEBAR_BG_COLOR);
 	FontCreate(&fontHexSelected, Font_Msx, HEXCURSOR_FORE, HEXCURSOR_BACK);
 	InputInit();
@@ -190,6 +192,34 @@ void shDestroy()
 {
 	FontDestroy(fontBar);
 	InputDestroy();
+}
+SmallHexState shProcess()
+{
+	Surface surface;
+	GetCurrentBuffer(&surface);
+	ClearSurface(&surface, 0);
+
+	InputData input;
+	InputUpdate(&input);
+	if (input.repeat.inPs.select)
+	{
+		if (input.repeat.inPs.start)
+			return SmallHexState_Exit;
+		else
+			shOpenFileDialog(&surface, DefaultFont);
+	}
+	else
+		shInputControl(&input);
+
+	if (shDrawInvalidate)
+	{
+		shDrawInvalidate = false;
+		shDrawTitleBar(&surface);
+		shDrawBody(&surface);
+		GraphicsSwapBuffers(true);
+	}
+	GraphicsWaitVSync();
+	return SmallHexState_Loop;
 }
 void shDrawTitleBar(Surface *surface)
 {
@@ -326,6 +356,8 @@ void shInputControl(InputData *input)
 		move -= shBytesPerLine * shLinesPerPage;
 	else if (input->repeat.inPc.pgdown)
 		move += shBytesPerLine * shLinesPerPage;
+	else if (input->lx != 0)
+		move += input->lx * shBytesPerLine / 2 / 32767;
 	else if (input->ly != 0)
 		move += input->ly * shBytesPerLine * shLinesPerPage / 32767;
 
@@ -338,6 +370,7 @@ void shInputControl(InputData *input)
 			move = 0;
 		if (shCursorPos != move)
 		{
+			shDrawInvalidate = true;
 			shCursorPos = move;
 			if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
 			{

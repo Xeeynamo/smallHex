@@ -40,28 +40,7 @@ int main(int argc, char *argv[])
 		shInit();
 		if (!(argc == 2 && shOpenFile(argv[1])))
 			shOpenFileDialog(&surface, DefaultFont);
-		while (1)
-		{
-			GetCurrentBuffer(&surface);
-			ClearSurface(&surface, 0);
-
-			InputData input;
-			InputUpdate(&input);
-			if (input.repeat.inPs.select)
-			{
-				if (input.repeat.inPs.start)
-					break;
-				else
-					shOpenFileDialog(&surface, DefaultFont);
-			}
-			else
-				shInputControl(&input);
-
-			shDrawTitleBar(&surface);
-			shDrawBody(&surface);
-			GraphicsSwapBuffers(true);
-			GraphicsWaitVSync();
-		}
+		while (shProcess() > 0);
 		shDestroy();
 		DrawDestroy();
 	}

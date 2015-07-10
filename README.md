@@ -13,32 +13,32 @@ Install [devkitPro](http://devkitpro.org/) + [psp2sdk](https://github.com/173210
 
 # how to use
 ### smallHex
-Currently smallHex works in read-only mode.
-You can use the arrow of your keyboard, digital or analog sticks to move through bytes. PgUp/PgDown or LTrigger/RTrigger can be used to move through pages very fast.
-Press select to show file manager
-Press start + select to exit
+* Currently smallHex works in read-only mode.
+* You can use the arrow of your keyboard, digital or analog sticks to move through bytes. PgUp/PgDown or LTrigger/RTrigger can be used to move through pages very fast.
+* Press select to show file manager
+* Press start + select to exit
 ### file manager
-Use digital/analog sticks and PgUp/PgDown or LTrigger/RTrigger to move through file list
-Press left to go to previous directory
-Press right or cross to enter to selected directory
-Press cross to open selected file
-Press select to change through devices
+* Use digital/analog sticks and PgUp/PgDown or LTrigger/RTrigger to move through file list
+* Press left to go to previous directory
+* Press right or cross to enter to selected directory
+* Press cross to open selected file
+* Press select to change through devices
 
 # features
-File explorer ~~with file/directory creation, deletion and edit~~
-Custom fonts for carriage-return and new-line.
-Rendering on-demand to save CPU cycles (and power)
+* File explorer ~~with file/directory creation, deletion and edit~~
+* Custom fonts for carriage-return and new-line.
+* Rendering on-demand to save CPU cycles (and power)
 
 # to-do
 ### smallHex
-Hex editing
-Char editing
-Byte finder
-Data viewer
-String list
-Settings menu
+* Hex editing
+* Char editing
+* Byte finder
+* Data viewer
+* String list
+* Settings menu
 ### file manager
-File creation
-File truncation
-File deletion, renaming, change access privileges, copy, move
-Directory creation, deletion, renaming, access privileges, copy, move
+* File creation
+* File truncation
+* File deletion, renaming, change access privileges, copy, move
+* Directory creation, deletion, renaming, access privileges, copy, move

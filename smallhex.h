@@ -21,8 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "draw.h"
 
+typedef enum
+{
+	SmallHexState_Error = -1,
+	SmallHexState_Exit = 0,
+	SmallHexState_Loop = 1,
+} SmallHexState;
+
 void shInit();
 void shDestroy();
+SmallHexState shProcess();
 
 void shDrawTitleBar(Surface *surface);
 void shDrawBody(Surface *surface);
