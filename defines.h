@@ -4,6 +4,7 @@
 #define CALL_FAILED(i) ((i) < 0)
 #define align_mem(addr, align) (((addr) + ((align) - 1)) & ~((align) - 1))
 #define lerp(value, from_max, to_max) ((((value*10) * (to_max*10))/(from_max*10))/10)
+#define lengthof(i) (sizeof((i)) / sizeof(*(i)))
 
 #if defined(_WIN32)
 #define ALIGN(i)

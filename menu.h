@@ -37,28 +37,29 @@ typedef enum
 typedef struct
 {
 	int *Value;
-	int(*OnChanged)(int value, int previous);
+	int(*OnChanged)(int value);
 	int Count;
 	int Min;
 } MenuTypeValueRange;
 typedef struct
 {
 	int *Value;
-	int(*OnChanged)(int value, int previous);
+	int(*OnChanged)(int value);
 	int Count;
-	const int *Set;
+	const int *Set[];
 } MenuTypeValueSet;
 typedef struct
 {
 	int *Value;
-	int(*OnChanged)(int value, int previous);
+	int(*OnChanged)(int value);
 	int Count;
-	const char *Strings[];
+	const char **Strings[];
 } MenuTypeValueStringsSet;
 typedef struct
 {
 	int(*Function)();
 } MenuTypeFunction;
+typedef struct _MenuItem;
 typedef struct _MenuEntry
 {
 	const char *Name;
@@ -69,7 +70,7 @@ typedef struct _MenuEntry
 		MenuTypeValueSet ValueSet;
 		MenuTypeValueStringsSet ValueStringSet;
 		MenuTypeFunction Function;
-		struct _MenuEntry *Submenu;
+		struct _MenuItem const *Submenu;
 	};
 } MenuEntry;
 typedef struct _MenuItem
@@ -82,9 +83,9 @@ typedef struct _MenuItem
 
 typedef void *Menu;
 
-Menu MenuCreate(MenuItem *item, Font font, int width);
+Menu MenuCreate(const MenuItem *item, Font font, int width);
 void MenuDestroy(Menu menu);
 void MenuDraw(Menu menu, Surface *surface, int x, int y);
-void MenuProcess(InputData *input);
+int MenuProcess(Menu menu, InputData *input);
 
 #endif

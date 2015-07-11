@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SMALLHEX_H
 #define _SMALLHEX_H
 
-#include "draw.h"
+#include "graphics.h"
 
 typedef enum
 {

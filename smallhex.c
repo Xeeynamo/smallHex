@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "system.h"
 #include "input.h"
 #include "filedilaog.h"
+#include "menu.h"
 
 #if defined(_WIN32)
 #define INITIAL_DIRECTORY "."
@@ -42,6 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Resources
 Font fontBar;
+Font fontDefault;
 Font fontHexSelected;
 
 // File management
@@ -61,10 +63,20 @@ bool shDrawInvalidate;
 // Settings variables
 bool shSetInvalidate;
 bool setShowBar = true;
-bool setOffsetShow = true;
-int setOffsetLenght = 7;
-int setBytesPerLine = 16;
+bool shSetOffsetShow = true;
+int shSetOffsetLenght = 7;
+int shSetBytesPerLine = 16;
 int shSetBytesGroup = 2;
+
+// Menu settings
+Menu shCurrentMenu = 0;
+Menu shMenuVisualSettings;
+Menu shMenuFontSettings;
+int shMenuSetOffset = 0;
+int shMenuSetBytesGroup = 0;
+int shMenuSetFontBgR = 0;
+int shMenuSetFontBgG = 0;
+int shMenuSetFontBgB = 0;
 
 // Hex editor itself
 int shBytesPerLine = 0;
@@ -81,9 +93,104 @@ static const char Hex2Char[] =
 	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
 };
 
-#define _shHexToChar(value) (value)
+//////////////////////////////////////////////////////////////////////////
+// Menu entries
+
+int _shCreateFont(Color32 fgColor, Color32 bgColor)
+{
+	FontDestroy(fontDefault);
+	FontCreate(&fontDefault, Font_Msx, fgColor, bgColor);
+	shDrawInvalidate = true;
+}
+int _shMenuFontSettingsBg(int value)
+{
+	_shCreateFont(RGB8(0xFF, 0xFF, 0xFF),
+		RGB8(shMenuSetFontBgR, shMenuSetFontBgG, shMenuSetFontBgB));
+}
+int _shMenuVisualSettingsOffset(int value)
+{
+	shSetInvalidate = true;
+	shSetOffsetShow = true;
+	switch (shMenuSetOffset)
+	{
+	case 0:
+		shSetOffsetShow = false;
+		break;
+	case 1:
+		shSetOffsetLenght = 6;
+		break;
+	case 2:
+		shSetOffsetLenght = 7;
+		break;
+	case 3:
+		shSetOffsetLenght = 8;
+		break;
+	case 4:
+		shSetOffsetLenght = 9;
+		break;
+	case 5:
+		shSetOffsetLenght = 10;
+		break;
+	}
+	return 1;
+}
+int _shMenuVisualSettingsBytesgroup(int value)
+{
+	shSetInvalidate = true;
+	switch (shMenuSetBytesGroup)
+	{
+	case 0:
+		shSetBytesGroup = 1;
+		break;
+	case 1:
+		shSetBytesGroup = 2;
+		break;
+	case 2:
+		shSetBytesGroup = 4;
+		break;
+	case 3:
+		shSetBytesGroup = 8;
+		break;
+	}
+	return 1;
+}
+
+static const MenuEntry FontSettingsEntries[] =
+{
+	{ "Background RED", MenuType_ValueRange, { &shMenuSetFontBgR, _shMenuFontSettingsBg, 256, 0 } },
+	{ "Background GREEN", MenuType_ValueRange, { &shMenuSetFontBgG, _shMenuFontSettingsBg, 256, 0 } },
+	{ "Background BLUE", MenuType_ValueRange, { &shMenuSetFontBgB, _shMenuFontSettingsBg, 256, 0 } },
+};
+static const MenuItem FontSettings = { "Font settings", NULL, sizeof(FontSettingsEntries) / sizeof(MenuEntry), FontSettingsEntries };
+
+static const char *VisualSettingsEntries_OffsetValues[] = { "Hide", "6", "7", "8", "9", "10" };
+static const char *VisualSettingsEntries_GroupBytesValues[] = { "1", "2", "4", "8" };
+static const MenuEntry VisualSettingsEntries[] =
+{
+	{ "Offset", MenuType_ValueStringSet, { &shMenuSetOffset, _shMenuVisualSettingsOffset,
+	lengthof(VisualSettingsEntries_OffsetValues), VisualSettingsEntries_OffsetValues } },
+	{ "Group bytes", MenuType_ValueStringSet, { &shMenuSetBytesGroup, _shMenuVisualSettingsBytesgroup,
+	lengthof(VisualSettingsEntries_GroupBytesValues), VisualSettingsEntries_GroupBytesValues } },
+	//{ "Font settings", MenuType_Submenu, VisualSettingsFont },
+};
+static const MenuItem VisualSettings = { "Visual settings", NULL, sizeof(VisualSettingsEntries) / sizeof(MenuEntry), VisualSettingsEntries };
+
+//////////////////////////////////////////////////////////////////////////
+
 
 void _shDrawHex(Surface* surface, Font font, unsigned int x, unsigned int y, unsigned int value, unsigned int units)
+{
+	unsigned int sh = 0;
+	x += (units - 1) * FONT_W;
+	while (units--)
+	{
+		unsigned int n = (value >> sh) & 0xF;
+		sh += 4;
+		DrawChar(surface, font, x, y, Hex2Char[n]);
+		x -= FONT_W;
+	}
+}
+void _shDrawLHex(Surface* surface, Font font, unsigned int x, unsigned int y, unsigned long long value, unsigned int units)
 {
 	unsigned int sh = 0;
 	x += (units - 1) * FONT_W;
@@ -166,7 +273,7 @@ void _shResizeWindow(Surface *surface)
 	int y = (setShowBar ? 2 : 1) * FONT_H;
 
 	shPosxOffset = 0;
-	shPosxHex = setOffsetShow ? setOffsetLenght + 2 : 1;
+	shPosxHex = shSetOffsetShow ? shSetOffsetLenght + 2 : 1;
 	shLinesPerPage = (surface->height - y - FONT_H - 1) / (FONT_H + BYTES_VERTICALSPACE);
 	shBytesPerLine = (surface->width / FONT_W) - shPosxHex - (FONT_H + 2);
 	shBytesPerLine = shBytesPerLine * shSetBytesGroup / (2 * (shSetBytesGroup + 1));
@@ -184,12 +291,25 @@ void shInit()
 	shFile = FileInvalid;
 	shSetInvalidate = true;
 	shDrawInvalidate = true;
+	fontDefault = DefaultFont;
+	fontBar = DefaultFont;
+	fontHexSelected = DefaultFont;
 	FontCreate(&fontBar, Font_Msx, RGB8(0x00, 0x00, 0x00), TITLEBAR_BG_COLOR);
 	FontCreate(&fontHexSelected, Font_Msx, HEXCURSOR_FORE, HEXCURSOR_BACK);
+	shMenuVisualSettings = MenuCreate(&VisualSettings, DefaultFont, 300);
+	shMenuFontSettings = MenuCreate(&FontSettings, DefaultFont, 300);
 	InputInit();
+
+	// default settings
+	_shCreateFont(RGB8(0xFF, 0xFF, 0xFF), RGB8(0x00, 0x00, 0x00));
+	_shMenuVisualSettingsOffset(shMenuSetOffset = 2);
+	_shMenuVisualSettingsOffset(shMenuSetBytesGroup = 1);
 }
 void shDestroy()
 {
+	MenuDestroy(shMenuVisualSettings);
+	FontDestroy(fontDefault);
+	FontDestroy(fontHexSelected);
 	FontDestroy(fontBar);
 	InputDestroy();
 }
@@ -197,7 +317,7 @@ SmallHexState shProcess()
 {
 	Surface surface;
 	GetCurrentBuffer(&surface);
-	ClearSurface(&surface, 0);
+	ClearSurface(&surface, RGB8(shMenuSetFontBgR, shMenuSetFontBgG, shMenuSetFontBgB));
 
 	InputData input;
 	InputUpdate(&input);
@@ -214,7 +334,8 @@ SmallHexState shProcess()
 	if (shDrawInvalidate)
 	{
 		shDrawInvalidate = false;
-		shDrawTitleBar(&surface);
+		if (setShowBar)
+			shDrawTitleBar(&surface);
 		shDrawBody(&surface);
 		GraphicsSwapBuffers(true);
 	}
@@ -254,13 +375,13 @@ void shDrawBody(Surface *surface)
 		int curY = y + j * (FONT_H + BYTES_VERTICALSPACE);
 		int group = shSetBytesGroup;
 
-		if (setOffsetShow)
-			_shDrawHex(surface, 0, shPosxOffset, curY, shPagePos + j * shBytesPerLine, setOffsetLenght);
+		if (shSetOffsetShow)
+			_shDrawLHex(surface, fontDefault, shPosxOffset, curY, shPagePos + j * shBytesPerLine, shSetOffsetLenght);
 
 		curX = shPosxHex;
 		for (i = 0; i < xcount && remainsBytes > 0; i++, remainsBytes--)
 		{
-			_shDrawHex(surface, 0, curX * FONT_W, curY, *bufHex++, 2);
+			_shDrawHex(surface, fontDefault, curX * FONT_W, curY, *bufHex++, 2);
 			if (--group)
 				curX += 2;
 			else
@@ -278,9 +399,11 @@ void shDrawBody(Surface *surface)
 		// Draw characters
 		curX = shPosxChar;
 		for (i = 0; i < xcount && remainsBytes > 0; i++, remainsBytes--)
-			DrawChar8(surface, curX++ * FONT_W, curY, _shHexToChar(*bufChar++));
+			DrawChar(surface, fontDefault, curX++ * FONT_W, curY, *bufChar++);
 	}
 	_shDrawCursor(surface, shCursorPos, xcount, ycount);
+	if (shCurrentMenu != 0)
+		MenuDraw(shCurrentMenu, surface, MENU_DEFAULT_POSITION, MENU_DEFAULT_POSITION);
 }
 
 
@@ -343,47 +466,65 @@ void shCloseFile()
 }
 void shInputControl(InputData *input)
 {
-	int move = 0;
-	if (input->repeat.inPs.left)
-		move -= 1;
-	else if (input->repeat.inPs.right)
-		move += 1;
-	if (input->repeat.inPs.up)
-		move -= shBytesPerLine;
-	else if (input->repeat.inPs.down)
-		move += shBytesPerLine;
-	else if (input->repeat.inPc.pgup)
-		move -= shBytesPerLine * shLinesPerPage;
-	else if (input->repeat.inPc.pgdown)
-		move += shBytesPerLine * shLinesPerPage;
-	else if (input->lx != 0)
-		move += input->lx * shBytesPerLine / 2 / 32767;
-	else if (input->ly != 0)
-		move += input->ly * shBytesPerLine * shLinesPerPage / 32767;
-
-	if (move != 0)
+	if (shCurrentMenu == 0)
 	{
-		move = shCursorPos + move;
-		if (move >= shFileLength)
-			move = shFileLength - 1;
-		if (move < 0) // not else if, just in case the file length is 0
-			move = 0;
-		if (shCursorPos != move)
+		int move = 0;
+		if (input->repeat.inPs.left)
+			move -= 1;
+		else if (input->repeat.inPs.right)
+			move += 1;
+		if (input->repeat.inPs.up)
+			move -= shBytesPerLine;
+		else if (input->repeat.inPs.down)
+			move += shBytesPerLine;
+		else if (input->repeat.inPc.pgup)
+			move -= shBytesPerLine * shLinesPerPage;
+		else if (input->repeat.inPc.pgdown)
+			move += shBytesPerLine * shLinesPerPage;
+		else if (input->lx != 0)
+			move += input->lx * shBytesPerLine / 2 / 32767;
+		else if (input->ly != 0)
+			move += input->ly * shBytesPerLine * shLinesPerPage / 32767;
+		else if (input->repeat.inPs.start)
 		{
+			shCurrentMenu = shMenuVisualSettings;
 			shDrawInvalidate = true;
-			shCursorPos = move;
-			if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+		}
+
+		if (move != 0)
+		{
+			move = shCursorPos + move;
+			if (move >= shFileLength)
+				move = shFileLength - 1;
+			if (move < 0) // not else if, just in case the file length is 0
+				move = 0;
+			if (shCursorPos != move)
 			{
-				while (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
-					shPagePos += shBytesPerLine;
+				shDrawInvalidate = true;
+				shCursorPos = move;
+				if (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+				{
+					while (shCursorPos >= shPagePos + shBytesPerLine * shLinesPerPage)
+						shPagePos += shBytesPerLine;
+				}
+				else if (shCursorPos < shPagePos)
+				{
+					while (shCursorPos < shPagePos)
+						shPagePos -= shBytesPerLine;
+					if (shPagePos < 0)
+						shPagePos = 0;
+				}
 			}
-			else if (shCursorPos < shPagePos)
-			{
-				while (shCursorPos < shPagePos)
-					shPagePos -= shBytesPerLine;
-				if (shPagePos < 0)
-					shPagePos = 0;
-			}
+		}
+	}
+	else
+	{
+		int r = MenuProcess(shCurrentMenu, input);
+		if (r != 0)
+		{
+			if (r < 0)
+				shCurrentMenu = 0;
+			shDrawInvalidate = true;
 		}
 	}
 }
