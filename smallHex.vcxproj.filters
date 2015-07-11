@@ -9,6 +9,7 @@
     <ClInclude Include="smallhex.h" />
     <ClInclude Include="system.h" />
     <ClInclude Include="filedilaog.h" />
+    <ClInclude Include="menu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="draw.c" />
@@ -19,6 +20,7 @@
     <ClCompile Include="smallhex.c" />
     <ClCompile Include="system.c" />
     <ClCompile Include="filedialog.c" />
+    <ClCompile Include="menu.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
