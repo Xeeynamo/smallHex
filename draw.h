@@ -51,6 +51,15 @@ typedef enum
 int DrawInit();
 void DrawDestroy();
 
+//! \brief draw a rectangle with only the borders visible
+//! \param[in] surface destination
+//! \param[in] x coordinate in pixel where the rectangle will be drawn
+//! \param[in] y coordinate in pixel where the rectangle will be drawn
+//! \param[in] width size in pixel of how horizontally big is the rectangle to draw
+//! \param[in] width size in pixel of how vertically big is the rectangle to draw
+//! \param[in] color of rectangle to draw
+void DrawRectangle(Surface *surface, int x, int y, int width, int height, Color32 color);
+
 //! \brief draw a rectangle with the content filled
 //! \param[in] surface destination
 //! \param[in] x coordinate in pixel where the rectangle will be drawn

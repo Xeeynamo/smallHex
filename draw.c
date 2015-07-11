@@ -73,6 +73,36 @@ void DrawDestroy()
 
 //////////////////////////////////////////////////////////////////////////
 // SHAPES DRAWING STUFF
+void DrawRectangle(Surface *surface, int x, int y, int width, int height, Color32 color)
+{
+	unsigned int *pDstMain = (unsigned int*)surface->data + x + y * surface->width;
+
+	if (x < 0 || y < 0)
+		return;
+	if (x + width > surface->width)
+		width = surface->width - x;
+	if (y + height > surface->height)
+		height = surface->height - y;
+	if (width < 0 || height < 0)
+		return;
+	
+	unsigned int w = width;
+	unsigned int *pDst = pDstMain;
+	while (w--)
+		*pDst++ = color;
+	pDstMain += surface->width;
+	height--;
+	while (--height)
+	{
+		pDstMain[0] = color;
+		pDstMain[width - 1] = color;
+		pDstMain += surface->width;
+	}
+	w = width;
+	pDst = pDstMain;
+	while (w--)
+		*pDst++ = color;
+}
 void FillRectangle(Surface *surface, int x, int y, int width, int height, Color32 color)
 {
 	unsigned int *pDstMain = (unsigned int*)surface->data + x + y * surface->width;
