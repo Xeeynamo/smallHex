@@ -142,7 +142,7 @@ bool FontCreate(Font *font, FontType type, Color32 foreColor, Color32 backColor)
 		fontData = fontmsx;
 		break;
 	default:
-		MemoryFree(font);
+		MemoryFree(pFont);
 		return false;
 	}
 	pFont->foreColor = foreColor;
