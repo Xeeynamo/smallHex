@@ -1,5 +1,5 @@
 TARGET = smallHex
-OBJS   = main.o system.o draw.o font8.o graphics.o input.o filedialog.o menu.o smallhex.o
+OBJS   = main.o xelib.o system.o draw.o font8.o graphics.o input.o filedialog.o menu.o smallhex.o
 
 LIBS = -lc_stub -lSceKernel_stub -lSceDisplay_stub -lSceGxm_stub	\
 	-lSceCtrl_stub -lSceTouch_stub

@@ -10,6 +10,7 @@
     <ClInclude Include="system.h" />
     <ClInclude Include="filedilaog.h" />
     <ClInclude Include="menu.h" />
+    <ClInclude Include="xelib.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="draw.c" />
@@ -21,6 +22,7 @@
     <ClCompile Include="system.c" />
     <ClCompile Include="filedialog.c" />
     <ClCompile Include="menu.c" />
+    <ClCompile Include="xelib.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

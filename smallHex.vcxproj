@@ -112,6 +112,7 @@ make 2&gt;&amp;1 | perl %PSP2SDK%/gcc2vs.pl %cd% 2&gt;&amp;1</NMakeReBuildComman
     <ClInclude Include="menu.h" />
     <ClInclude Include="smallhex.h" />
     <ClInclude Include="system.h" />
+    <ClInclude Include="xelib.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="draw.c" />
@@ -123,6 +124,7 @@ make 2&gt;&amp;1 | perl %PSP2SDK%/gcc2vs.pl %cd% 2&gt;&amp;1</NMakeReBuildComman
     <ClCompile Include="menu.c" />
     <ClCompile Include="smallhex.c" />
     <ClCompile Include="system.c" />
+    <ClCompile Include="xelib.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
